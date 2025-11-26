@@ -5,6 +5,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.rowanmcalpin.nextftc.core.command.Command;
 import com.rowanmcalpin.nextftc.core.command.CommandManager;
 
 @TeleOp(name = "Turret CRServo TeleOp")
@@ -119,6 +120,16 @@ public class Teleop extends OpMode {
         if(gamepad1.cross){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.OuttakeOff()
+            );
+        }
+        if(gamepad1.left_bumper){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.doorOn()
+            );
+        }
+        if(gamepad1.right_bumper){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.doorBack()
             );
         }
 
