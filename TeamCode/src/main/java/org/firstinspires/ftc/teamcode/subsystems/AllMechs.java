@@ -66,16 +66,19 @@ public class AllMechs {
         backRight = hardwareMap.get(DcMotorEx.class, "back left");
         frontRight = hardwareMap.get(DcMotorEx.class, "front right");
         backLeft = hardwareMap.get(DcMotorEx.class, "back right");
-//        outtakeLow = hardwareMap.get(DcMotorEx.class, "outtake Low");
-//        outtakeHigh = hardwareMap.get(DcMotorEx.class, "outtake High");
+        outtakeLow = hardwareMap.get(DcMotorEx.class, "outtake Low");
+        outtakeHigh = hardwareMap.get(DcMotorEx.class, "outtake High");
+
+        outtakeHigh.setDirection(DcMotorSimple.Direction.REVERSE);
         intake = hardwareMap.get(DcMotorEx.class, "intake");
+
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
 
         frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         backRight.setDirection(DcMotorSimple.Direction.REVERSE);
         // Initialize continuous rotation turret servo
         turretServo = hardwareMap.get(CRServo.class, "turretServo");
-        door = hardwareMap.get(Servo.class, "door");
+//        door = hardwareMap.get(Servo.class, "door");
         turretServo.setPower(0);
 
 

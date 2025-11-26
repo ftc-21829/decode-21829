@@ -92,7 +92,7 @@ public class Teleop extends OpMode {
                     robot.transferOn()
             );
         }
-        if(gamepad1.dpad_up){
+        if(gamepad1.dpad_down){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.transferOff()
             );
@@ -131,6 +131,9 @@ public class Teleop extends OpMode {
             CommandManager.INSTANCE.scheduleCommand(
                     robot.doorBack()
             );
+        }
+        if(gamepad2.cross) {
+            robot.transfer.setPower(-1);
         }
 
         CommandManager.INSTANCE.run();
