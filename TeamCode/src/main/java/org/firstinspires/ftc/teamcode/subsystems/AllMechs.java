@@ -25,6 +25,7 @@ public class AllMechs {
     public Follower follower;
     public ColorSensor colorSensor;
     // Continuous rotation turret servo
+    public Servo door;
     public CRServo turretServo;
 
     // Limelight vision
@@ -74,7 +75,9 @@ public class AllMechs {
         backRight.setDirection(DcMotorSimple.Direction.REVERSE);
         // Initialize continuous rotation turret servo
         turretServo = hardwareMap.get(CRServo.class, "turretServo");
+        door = hardwareMap.get(Servo.class, "door");
         turretServo.setPower(0);
+
 
         // Initialize Limelight
         initializeLimelight(hardwareMap);
@@ -198,6 +201,12 @@ public class AllMechs {
     }
     public Command turretOff() {
         return new InstantCommand(()-> setTurretTrackingActive(false));
+    }
+    public Command doorOn() {
+        return new InstantCommand(()-> door.setPosition(0.5));
+    }
+    public Command doorBack() {
+        return new InstantCommand(()-> door.setPosition(0.05));
     }
 
 
