@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(name = "Pedro Pathing Autonomous", group = "Autonomous")
+@Autonomous(name = "Blue15FarAuto", group = "Autonomous")
 @Configurable // Panels
 public class Blue15FarAuto extends OpMode {
 
@@ -162,7 +162,18 @@ public class Blue15FarAuto extends OpMode {
         }
     }
 
+    public void setPathState(int pState) {
+        pathState = pState;
+    }
+
     public int autonomousPathUpdate() {
+
+        switch (pathState) {
+            case 0:
+
+
+
+        }
         // Add your state machine Here
         // Access paths with paths.pathName
         // Refer to the Pedro Pathing Docs (Auto Example) for an example state machine

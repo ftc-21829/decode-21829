@@ -14,7 +14,7 @@ import org.firstinspires.ftc.teamcode.R;
 
 public class DoubleIntake {
 
-    public DcMotorEx intakeFront, intakeBack;
+    public DcMotorEx intake;
     public ColorSensor colorSensorFront, colorSensorBack;
     public Gamepad gamepad1;
     public Gamepad gamepad2;
@@ -46,8 +46,7 @@ public class DoubleIntake {
 
     public DoubleIntake(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
-        intakeBack = hardwareMap.get(DcMotorEx.class, "intakeBack");
-        intakeFront = hardwareMap.get(DcMotorEx.class, "intakeFront");
+        intake = hardwareMap.get(DcMotorEx.class, "intake");
 
         colorSensorBack = hardwareMap.get(ColorSensor.class, "colorSensorBack");
         colorSensorFront = hardwareMap.get(ColorSensor.class, "colorSensorFront");
@@ -60,12 +59,17 @@ public class DoubleIntake {
         switch(intakeState){
 
             case IDLE:
-                intakeBack.setPower(0);
-                intakeFront.setPower(0);
+                intake.setPower(0);
+
+                double current = intake.getCurrent(CurrentUnit.MILLIAMPS);
+                if(current > CURRENT_THRESHOLD ){
+                    intake.setPower(1);
+                    setState(IntakeState.INTAKING);
+                }
+
+
 
             case INTAKING:
-                double currentBack = intakeBack.getCurrent(CurrentUnit.MILLIAMPS);
-                double currentFront = intakeFront.getCurrent(CurrentUnit.MILLIAMPS);
 
                 int redFront = colorSensorFront.red();
                 int blueFront = colorSensorFront.blue();
@@ -75,30 +79,22 @@ public class DoubleIntake {
                 int blueBack = colorSensorBack.blue();
                 int greenBack = colorSensorBack.green();
 
-                if(currentFront > CURRENT_THRESHOLD || currentBack > CURRENT_THRESHOLD){
-                    intakeFront.setPower(1);
-                    intakeBack.setPower(1);
 
-                }
 
                 if (redFront > 130 && redFront < 160 && blueFront > 180 && blueFront < 235 && greenFront > 1 && greenFront < 75) {
-                    gamepad1.rumbleBlips(1);
                     gamepad1.setLedColor(140, 70, 190,2500);
                     ballTimerFrontPurple.resetTimer();
 
                 }
                 if (redBack > 130 && redBack < 160 && blueBack > 180 && blueBack < 235 && greenBack > 1 && greenBack < 75) {
-                    gamepad2.rumbleBlips(1);
                     gamepad2.setLedColor(140, 70, 190,2500);
                     ballTimerBackPurple.resetTimer();
                 }
                 if (redFront > 30 && redFront < 80 && blueFront > 110 && blueFront < 180 && greenFront > 155 && greenFront < 215) {
-                    gamepad1.rumbleBlips(1);
                     gamepad1.setLedColor(60, 190, 150,2500);
                     ballTimerFrontGreen.resetTimer();
                 }
                 if (redBack > 30 && redBack < 80 && blueBack > 110 && blueBack < 180 && greenBack > 155 && greenBack < 215) {
-                    gamepad1.rumbleBlips(1);
                     gamepad1.setLedColor(60, 190, 150,2500);
                     ballTimerBackGreen.resetTimer();
                 }
@@ -108,10 +104,7 @@ public class DoubleIntake {
 
 
             case EJECTING:
-                intakeBack.setDirection(DcMotorSimple.Direction.REVERSE);
-                intakeBack.setPower(1);
-                intakeFront.setDirection(DcMotorSimple.Direction.REVERSE);
-                intakeFront.setPower(1);
+               intake.setPower(-1);
 
         }
 

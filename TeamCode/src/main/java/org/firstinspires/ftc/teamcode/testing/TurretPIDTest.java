@@ -181,7 +181,6 @@ public class TurretPIDTest extends OpMode {
         } else {
             telemetry.addData("Status", "NO TARGET");
         }
-
         telemetry.addLine();
         telemetry.addLine("=== TURRET STATUS ===");
         telemetry.addData("Info", getTurretTelemetry());
