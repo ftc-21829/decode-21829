@@ -169,7 +169,7 @@ public class Blue15FarAuto extends OpMode {
     public int autonomousPathUpdate() {
 
         switch (pathState) {
-            case 0:
+            case 0 :
 
 
 
@@ -179,4 +179,6 @@ public class Blue15FarAuto extends OpMode {
         // Refer to the Pedro Pathing Docs (Auto Example) for an example state machine
         return pathState;
     }
+
+
 }

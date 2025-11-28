@@ -10,62 +10,74 @@ import com.qualcomm.robotcore.hardware.Servo;
 @TeleOp(name = "ServoTesting", group = "testing")
 public class ServoPos extends OpMode {
     public DcMotor fwLeft, fwRight, intakeFront, intakeBack;
-    public Servo hood, transfer;
+    public Servo hood, transfer, door;
 
     public static double servo_far_pos = 0.35;
     public static double servo_middle_pos = 0.3;
     public static double servo_close_pos = 0.15;
     public static double servo_reset_pos = 1;
+
     public static double motor_power = 1;
     public static double transfer_pos_up = 1;
     public static double transfer_pos_down = 0;
+    public static double door_pos_open = 0.75;
+    public static double door_pos_closed = 0.6;
+
 
 
 
     @Override
     public void init() {
-        fwLeft = hardwareMap.get(DcMotor.class, "flyWheelLeft");
-        fwRight = hardwareMap.get(DcMotor.class, "flyWheelRight");
-        intakeBack = hardwareMap.get(DcMotor.class, "intakeBack");
-        intakeFront = hardwareMap.get(DcMotor.class, "intakeFront");
+//       fwLeft = hardwareMap.get(DcMotor.class, "flyWheelLeft");
+//       fwRight = hardwareMap.get(DcMotor.class, "flyWheelRight");
+//       intakeBack = hardwareMap.get(DcMotor.class, "intakeBack");
+//       intakeFront = hardwareMap.get(DcMotor.class, "intakeFront");
+       door = hardwareMap.get(Servo.class, "door");
 
-        hood = hardwareMap.get(Servo.class, "hood");
-        transfer = hardwareMap.get(Servo.class, "transfer");
-        hood.setPosition(servo_reset_pos);
+//        hood = hardwareMap.get(Servo.class, "hood");
+//        transfer = hardwareMap.get(Servo.class, "transfer");
+//        hood.setPosition(servo_reset_pos);
 
 
     }
 
     @Override
     public void loop() {
-
-        if(gamepad1.dpad_left){
-            fwRight.setPower(motor_power);
-            fwLeft.setPower(motor_power);
+//
+//        if(gamepad1.dpad_left){
+//            fwRight.setPower(motor_power);
+//            fwLeft.setPower(motor_power);
+//        }
+//        if(gamepad1.dpad_up){
+//            hood.setPosition(servo_close_pos);
+//        }
+//        if(gamepad1.dpad_right){
+//            hood.setPosition(servo_middle_pos);
+//        }
+//        if(gamepad1.dpad_down){
+//            hood.setPosition(servo_far_pos);
+//        }
+//        if(gamepad1.square){
+//            hood.setPosition(servo_reset_pos);
+//        }
+//        if(gamepad1.left_bumper){
+//            transfer.setPosition(transfer_pos_up);
+//        }
+//        if(gamepad1.right_bumper){
+//            transfer.setPosition(transfer_pos_down);
+//        }
+//        if(gamepad1.circle){
+//            intakeFront.setPower(1);
+//            intakeBack.setPower(1);
+//        }
+        if (gamepad2.dpad_down) {
+            door.setPosition(door_pos_closed);
         }
-        if(gamepad1.dpad_up){
-            hood.setPosition(servo_close_pos);
+        if (gamepad2.dpad_up) {
+            door.setPosition(door_pos_open);
         }
-        if(gamepad1.dpad_right){
-            hood.setPosition(servo_middle_pos);
-        }
-        if(gamepad1.dpad_down){
-            hood.setPosition(servo_far_pos);
-        }
-        if(gamepad1.square){
-            hood.setPosition(servo_reset_pos);
-        }
-        if(gamepad1.left_bumper){
-            transfer.setPosition(transfer_pos_up);
-        }
-        if(gamepad1.right_bumper){
-            transfer.setPosition(transfer_pos_down);
-        }
-        if(gamepad1.circle){
-            intakeFront.setPower(1);
-            intakeBack.setPower(1);
-        }
-
+        telemetry.addData("Door Position", door.getPosition());
+        telemetry.update();
 
     }
 }

@@ -23,7 +23,7 @@ dependencies {
     implementation 'com.rowanmcalpin.nextftc:core:0.6.2'
     implementation 'com.rowanmcalpin.nextftc:ftc:0.6.2'
     implementation 'com.rowanmcalpin.nextftc:pedro:0.6.2' // Remove if you don't intend to use PedroPathing
-    implementation 'com.bylazar:fullpanels:1.0.9'
-    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.bylazar:fullpanels:1.0.10'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
 }
 

@@ -11,8 +11,9 @@ import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.subsystems.AllMechs;
 
-@Autonomous(name = "Pedro Pathing Autonomous", group = "Autonomous")
+@Autonomous(name = "Blue15CloseAuto", group = "Autonomous")
 @Configurable // Panels
 public class Blue15CloseAuto extends OpMode {
 
@@ -20,10 +21,12 @@ public class Blue15CloseAuto extends OpMode {
     public Follower follower; // Pedro Pathing follower instance
     private int pathState; // Current autonomous path state (state machine)
     private Paths paths; // Paths defined in the Paths class
+    AllMechs robot;
 
     @Override
     public void init() {
         panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
+
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
@@ -163,8 +166,57 @@ public class Blue15CloseAuto extends OpMode {
                     .build();
         }
     }
-
+    public void setPathState(int pState) {
+        pathState = pState;
+    }
     public int autonomousPathUpdate() {
+        switch (pathState) {
+
+            case 0:
+                follower.followPath(paths.ShootingPreload);
+
+                setPathState(1);
+                break;
+            case 1:
+                follower.followPath(paths.Intaking1);
+                setPathState(2);
+                break;
+            case 2:
+                follower.followPath(paths.Shooting1);
+                setPathState(3);
+                break;
+            case 3:
+                follower.followPath(paths.Intaking2);
+                setPathState(4);
+                break;
+            case 4:
+                follower.followPath(paths.Shooting2);
+                setPathState(5);
+                break;
+            case 5:
+
+                follower.followPath(paths.Intaking3);
+                setPathState(6);
+            case 6:
+                follower.followPath(paths.Outtake3);
+                setPathState(7);
+                break;
+            case 7:
+                follower.followPath(paths.Intake4);
+                setPathState(8);
+                break;
+            case 8:
+                follower.followPath(paths.Outtake4);
+                setPathState(9);
+                break;
+            case 9:
+                follower.followPath(paths.Leave);
+                break;
+
+
+
+
+        }
         // Add your state machine Here
         // Access paths with paths.pathName
         // Refer to the Pedro Pathing Docs (Auto Example) for an example state machine

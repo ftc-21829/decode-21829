@@ -16,6 +16,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.rowanmcalpin.nextftc.core.command.Command;
 
 import com.rowanmcalpin.nextftc.core.command.groups.ParallelGroup;
+import com.rowanmcalpin.nextftc.core.command.groups.SequentialGroup;
 import com.rowanmcalpin.nextftc.core.command.utility.InstantCommand;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
@@ -67,16 +68,16 @@ public class AllMechs {
         backRight = hardwareMap.get(DcMotorEx.class, "back left");
         frontRight = hardwareMap.get(DcMotorEx.class, "front right");
         backLeft = hardwareMap.get(DcMotorEx.class, "back right");
+        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
 //        outtakeLow = hardwareMap.get(DcMotorEx.class, "outtake Low");
 //        outtakeHigh = hardwareMap.get(DcMotorEx.class, "outtake High");
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
-
-        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        backRight.setDirection(DcMotorSimple.Direction.REVERSE);
         // Initialize continuous rotation turret servo
         turretServo = hardwareMap.get(CRServo.class, "turretServo");
         door = hardwareMap.get(Servo.class, "door");
+
         turretServo.setPower(0);
 
 
@@ -179,11 +180,25 @@ public class AllMechs {
     public Command intakeOff(){
         return new InstantCommand(()-> intake.setPower(0));
     }
+
+    public Command doorOpen() {return new InstantCommand(() -> door.setPosition(0.75));}
+    public Command doorClosed() {return new InstantCommand(() -> door.setPosition(0.6));}
+
     public Command transferOn() {
-        return new InstantCommand(()-> transfer.setPower(1));
+        return new ParallelGroup(
+                new InstantCommand(() -> transfer.setPower(1))
+
+        );
+
+
+
     }
+
     public Command transferOff() {
-        return new InstantCommand(()-> transfer.setPower(0));
+        return new ParallelGroup(
+                new InstantCommand(() -> transfer.setPower(0))
+
+        );
     }
     public Command OuttakeOn() {
         return new ParallelGroup(
@@ -203,12 +218,12 @@ public class AllMechs {
     public Command turretOff() {
         return new InstantCommand(()-> setTurretTrackingActive(false));
     }
-    public Command doorOn() {
-        return new InstantCommand(()-> door.setPosition(0.5));
-    }
-    public Command doorBack() {
-        return new InstantCommand(()-> door.setPosition(0.05));
-    }
+//    public Command doorOn() {
+//        return new InstantCommand(()-> door.setPosition(0.5));
+//    }
+//    public Command doorBack() {
+//        return new InstantCommand(()-> door.setPosition(0.05));
+//    }
 
 
 
