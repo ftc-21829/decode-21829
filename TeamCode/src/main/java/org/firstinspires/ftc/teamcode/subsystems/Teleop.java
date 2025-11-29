@@ -102,38 +102,38 @@ public class Teleop extends OpMode {
                     robot.OuttakeOn()
             );
         }
-        if(gamepad1.square){
-            CommandManager.INSTANCE.scheduleCommand(
-                    robot.OuttakeOn()
-            );
-        }
+
         if(gamepad1.circle){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.OuttakeOff()
             );
         }
-        if(gamepad1.triangle){
+        if(gamepad1.square){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.turretOn()
             );
         }
-        if(gamepad1.cross){
-            CommandManager.INSTANCE.scheduleCommand(
-                    robot.OuttakeOff()
-            );
-        }
+
+
         if(gamepad1.left_bumper){
             CommandManager.INSTANCE.scheduleCommand(
-                    robot.doorOn()
+                    robot.doorOpen()
             );
         }
         if(gamepad1.right_bumper){
             CommandManager.INSTANCE.scheduleCommand(
-                    robot.doorBack()
+                    robot.doorClose()
             );
         }
-        if(gamepad2.cross) {
-            robot.transfer.setPower(-1);
+        if(gamepad1.right_stick_button) {
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.buttkickerDown()
+            );
+        }
+        if(gamepad1 .left_stick_button) {
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.buttkickerUp()
+            );
         }
 
         CommandManager.INSTANCE.run();

@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import static org.firstinspires.ftc.teamcode.testing.TurretPIDTest.kd;
+import static org.firstinspires.ftc.teamcode.testing.TurretPIDTest.ki;
+import static org.firstinspires.ftc.teamcode.testing.TurretPIDTest.kp;
+
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.pedropathing.follower.Follower;
@@ -21,11 +25,11 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Config
 public class AllMechs {
-    public DcMotorEx intake, outtakeLow, outtakeHigh, transfer, frontLeft, frontRight, backLeft, backRight;
+    public DcMotorEx intake, outtakeLow, outtakeHigh, transfer;
     public Follower follower;
     public ColorSensor colorSensor;
     // Continuous rotation turret servo
-    public Servo door;
+    public Servo door, hood, buttkicker;
     public CRServo turretServo;
 
     // Limelight vision
@@ -38,19 +42,25 @@ public class AllMechs {
     public Gamepad gamepad2;
 
     // PID constants for TX (horizontal) tracking
-    public static double turret_kP = 0.01;
-    public static double turret_kI = 0.0;
-    public static double turret_kD = 0.001;
+    public static double turret_kP = 0.015;
+    public static double turret_kI = 0.0005;
+    public static double turret_kD = 0.004;
 
     // Tracking tolerance (degrees)
-    public static double turret_tolerance = 2.0;
+    public static double turret_tolerance = 1.0;
 
     // Max rotation power (speed limit)
-    public static double turret_max_power = 0.4;
+    public static double turret_max_power = 1;
+    public static double turret_deadband = 0.25;
 
     // PID state
     private double integral = 0.0;
     private double lastError = 0.0;
+
+    public static double door_open_pos = 0.75;
+    public static double door_close_pos = 0.6;
+    public static double butt_kicker_down = 0.88;
+    public static double butt_kicker_up = 0.4675;
 
     // Limelight pipeline
     public static int TRACKING_PIPELINE = 0;
@@ -62,10 +72,7 @@ public class AllMechs {
 
         follower = Constants.createFollower(hardwareMap);
 
-        frontLeft = hardwareMap.get(DcMotorEx.class, "front left");
-        backRight = hardwareMap.get(DcMotorEx.class, "back left");
-        frontRight = hardwareMap.get(DcMotorEx.class, "front right");
-        backLeft = hardwareMap.get(DcMotorEx.class, "back right");
+
         outtakeLow = hardwareMap.get(DcMotorEx.class, "outtake Low");
         outtakeHigh = hardwareMap.get(DcMotorEx.class, "outtake High");
 
@@ -74,12 +81,14 @@ public class AllMechs {
 
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
 
-        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        backRight.setDirection(DcMotorSimple.Direction.REVERSE);
         // Initialize continuous rotation turret servo
-        turretServo = hardwareMap.get(CRServo.class, "turretServo");
+        turretServo = hardwareMap.get(CRServo.class, "turret");
 //        door = hardwareMap.get(Servo.class, "door");
         turretServo.setPower(0);
+
+        door = hardwareMap.get(Servo.class, "door");
+        hood = hardwareMap.get(Servo.class, "hood");
+        buttkicker = hardwareMap.get(Servo.class, "buttkicker");
 
 
         // Initialize Limelight
@@ -130,11 +139,21 @@ public class AllMechs {
         double tx = currentResult.getTx();
         double error = tx;
 
+        if (Math.abs(error) < turret_deadband) {
+            turretServo.setPower(0);
+            lastError = 0.0;
+            return;
+        }
+
         // PID
         integral += error;
+        double maxIntegral = 100.0;
+        integral = Math.max(-maxIntegral, Math.min(maxIntegral, integral));
         double derivative = error - lastError;
-        double output = (turret_kP * error) + (turret_kI * integral) + (turret_kD * derivative);
+        double output = (kp * error) + (ki * integral) + (kd * derivative);
         lastError = error;
+
+        output = -output;
 
         // Clamp power
         output = Math.max(-turret_max_power, Math.min(turret_max_power, output));
@@ -163,7 +182,7 @@ public class AllMechs {
 
     public String getTurretTelemetry() {
         return String.format("Power: %.3f | Tracking: %s | Aligned: %s",
-                turretTrackingActive ? lastError * turret_kP : 0.0,
+                turretTrackingActive ? lastError * kp : 0.0,
                 turretTrackingActive ? "ON" : "OFF",
                 isTurretAligned() ? "YES" : "NO");
     }
@@ -181,6 +200,13 @@ public class AllMechs {
     public Command intakeOff(){
         return new InstantCommand(()-> intake.setPower(0));
     }
+    public Command doorOpen() {
+        return new InstantCommand(()-> door.setPosition(door_open_pos));
+    }
+    public Command doorClose() {
+        return new InstantCommand(()-> door.setPosition(door_close_pos));
+    }
+
     public Command transferOn() {
         return new InstantCommand(()-> transfer.setPower(1));
     }
@@ -189,8 +215,8 @@ public class AllMechs {
     }
     public Command OuttakeOn() {
         return new ParallelGroup(
-                new InstantCommand(()-> outtakeHigh.setPower(1)),
-                new InstantCommand(()-> outtakeLow.setPower(1))
+                new InstantCommand(()-> outtakeHigh.setPower(0.85)),
+                new InstantCommand(()-> outtakeLow.setPower(0.85))
         );
     }
     public Command OuttakeOff() {
@@ -205,12 +231,13 @@ public class AllMechs {
     public Command turretOff() {
         return new InstantCommand(()-> setTurretTrackingActive(false));
     }
-    public Command doorOn() {
-        return new InstantCommand(()-> door.setPosition(0.5));
+    public Command buttkickerUp() {
+        return new InstantCommand(()-> buttkicker.setPosition(0.4675));
     }
-    public Command doorBack() {
-        return new InstantCommand(()-> door.setPosition(0.05));
+    public Command buttkickerDown() {
+        return new InstantCommand(()-> buttkicker.setPosition(0.88));
     }
+
 
 
 
