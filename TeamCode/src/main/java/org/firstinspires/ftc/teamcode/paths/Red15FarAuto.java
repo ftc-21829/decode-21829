@@ -163,9 +163,74 @@ public class Red15FarAuto extends OpMode {
     }
 
     public int autonomousPathUpdate() {
-        // Add your state machine Here
-        // Access paths with paths.pathName
-        // Refer to the Pedro Pathing Docs (Auto Example) for an example state machine
+        switch (pathState) {
+            case 0:
+                follower.followPath(paths.Intaking1);
+                pathState = 1;
+                break;
+            case 1:
+                if(!follower.isBusy()) {
+                    /* Grab Sample 1 */
+                    follower.followPath(paths.Outtaking1, true);
+                    pathState = 2;
+                }
+                break;
+            case 2:
+                if(!follower.isBusy()) {
+                    /* Score Sample 1 */
+                    follower.followPath(paths.Intaking2, true);
+                    pathState = 3;
+                }
+                break;
+            case 3:
+                if(!follower.isBusy()) {
+                    /* Grab Sample 2 */
+                    follower.followPath(paths.Outtaking2, true);
+                    pathState = 4;
+                }
+                break;
+            case 4:
+                if(!follower.isBusy()) {
+                    /* Score Sample 2 */
+                    follower.followPath(paths.Intaking3, true);
+                    pathState = 5;
+                }
+                break;
+            case 5:
+                if(!follower.isBusy()) {
+                    /* Grab Sample 3 */
+                    follower.followPath(paths.Outtaking3, true);
+                    pathState = 6;
+                }
+                break;
+            case 6:
+                if(!follower.isBusy()) {
+                    /* Score Sample 3 */
+                    follower.followPath(paths.Intaking4, true);
+                    pathState = 7;
+                }
+                break;
+            case 7:
+                if(!follower.isBusy()) {
+                    /* Grab Sample 4 */
+                    follower.followPath(paths.Outtaking4, true);
+                    pathState = 8;
+                }
+                break;
+            case 8:
+                if(!follower.isBusy()) {
+                    /* Score Sample 4 */
+                    follower.followPath(paths.Leave, true);
+                    pathState = 9;
+                }
+                break;
+            case 9:
+                if(!follower.isBusy()) {
+                    /* Parked - End autonomous */
+                    pathState = -1;
+                }
+                break;
+        }
         return pathState;
     }
 }

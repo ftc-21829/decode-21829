@@ -66,9 +66,9 @@ public class Blue15FarAuto extends OpMode {
                     .pathBuilder()
                     .addPath(
                             new BezierCurve(
-                                    new Pose(56.000, 8.000),
-                                    new Pose(37.685, 38.932),
-                                    new Pose(18.218, 35.438)
+                                    new Pose(56.000+24, 8.000),
+                                    new Pose(37.685+24, 38.932),
+                                    new Pose(20.218+24, 35.438)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
@@ -78,9 +78,9 @@ public class Blue15FarAuto extends OpMode {
                     .pathBuilder()
                     .addPath(
                             new BezierCurve(
-                                    new Pose(18.218, 35.438),
-                                    new Pose(46.170, 43.674),
-                                    new Pose(63.390, 73.872)
+                                    new Pose(20.218+24, 35.438),
+                                    new Pose(46.170+24, 43.674),
+                                    new Pose(63.390+24, 73.872)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(145))
@@ -90,9 +90,9 @@ public class Blue15FarAuto extends OpMode {
                     .pathBuilder()
                     .addPath(
                             new BezierCurve(
-                                    new Pose(63.390, 73.872),
-                                    new Pose(40.430, 48.915),
-                                    new Pose(14.475, 64.388)
+                                    new Pose(63.390+24, 73.872),
+                                    new Pose(40.430+24, 48.915),
+                                    new Pose(20.475+14, 62.388) //67.388
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(145), Math.toRadians(180))
@@ -102,9 +102,9 @@ public class Blue15FarAuto extends OpMode {
                     .pathBuilder()
                     .addPath(
                             new BezierCurve(
-                                    new Pose(14.475, 64.388),
-                                    new Pose(45.421, 70.627),
-                                    new Pose(51.161, 85.352)
+                                    new Pose(20.475+14, 62.388),
+                                    new Pose(45.421+24, 70.627),
+                                    new Pose(51.161+24, 85.352)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(145))
@@ -114,9 +114,9 @@ public class Blue15FarAuto extends OpMode {
                     .pathBuilder()
                     .addPath(
                             new BezierCurve(
-                                    new Pose(51.161, 85.352),
-                                    new Pose(37.934, 81.608),
-                                    new Pose(18.218, 83.355)
+                                    new Pose(51.161+24, 85.352),
+                                    new Pose(37.934+24, 81.608),
+                                    new Pose(20.218+24, 81.355)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(145), Math.toRadians(180))
@@ -125,7 +125,7 @@ public class Blue15FarAuto extends OpMode {
             Outtaking3 = follower
                     .pathBuilder()
                     .addPath(
-                            new BezierLine(new Pose(18.218, 83.355), new Pose(50.912, 85.352))
+                            new BezierLine(new Pose(20.218+24, 81.355), new Pose(50.912+24, 85.352))
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(145))
                     .build();
@@ -134,9 +134,9 @@ public class Blue15FarAuto extends OpMode {
                     .pathBuilder()
                     .addPath(
                             new BezierCurve(
-                                    new Pose(50.912, 85.352),
-                                    new Pose(9.983, 41.428),
-                                    new Pose(7.737, 8.485)
+                                    new Pose(50.912+24, 85.352),
+                                    new Pose(9.983+24, 41.428),
+                                    new Pose(7.737+24, 8.485)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(145), Math.toRadians(270))
@@ -146,9 +146,9 @@ public class Blue15FarAuto extends OpMode {
                     .pathBuilder()
                     .addPath(
                             new BezierCurve(
-                                    new Pose(7.737, 8.485),
-                                    new Pose(41.428, 14.974),
-                                    new Pose(55.154, 11.730)
+                                    new Pose(7.737+24, 8.485),
+                                    new Pose(41.428+24, 14.974),
+                                    new Pose(55.154+24, 11.730)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(270), Math.toRadians(90))
@@ -157,7 +157,7 @@ public class Blue15FarAuto extends OpMode {
             Leave = follower
                     .pathBuilder()
                     .addPath(
-                            new BezierLine(new Pose(55.154, 11.730), new Pose(55.404, 28.201))
+                            new BezierLine(new Pose(55.154+24, 11.730), new Pose(55.404+24, 28.201))
                     )
                     .setConstantHeadingInterpolation(Math.toRadians(90))
                     .build();
@@ -165,9 +165,75 @@ public class Blue15FarAuto extends OpMode {
     }
 
     public int autonomousPathUpdate() {
-        // Add your state machine Here
-        // Access paths with paths.pathName
-        // Refer to the Pedro Pathing Docs (Auto Example) for an example state machine
+        switch (pathState) {
+
+            case 0:
+                follower.followPath(paths.Intaking1);
+                pathState = 1;
+                break;
+            case 1:
+                if(!follower.isBusy()) {
+                    /* Grab Sample 1 */
+                    follower.followPath(paths.Outtaking1, true);
+                    pathState = 2;
+                }
+                break;
+            case 2:
+                if(!follower.isBusy()) {
+                    /* Score Sample 1 */
+                    follower.followPath(paths.Intaking2, true);
+                    pathState = 3;
+                }
+                break;
+            case 3:
+                if(!follower.isBusy()) {
+                    /* Grab Sample 2 */
+                    follower.followPath(paths.Outtaking2, true);
+                    pathState = 4;
+                }
+                break;
+            case 4:
+                if(!follower.isBusy()) {
+                    /* Score Sample 2 */
+                    follower.followPath(paths.Intaking3, true);
+                    pathState = 5;
+                }
+                break;
+            case 5:
+                if(!follower.isBusy()) {
+                    /* Grab Sample 3 */
+                    follower.followPath(paths.Outtaking3, true);
+                    pathState = 6;
+                }
+                break;
+            case 6:
+                if(!follower.isBusy()) {
+                    /* Score Sample 3 */
+                    follower.followPath(paths.Intaking4, true);
+                    pathState = 7;
+                }
+                break;
+            case 7:
+                if(!follower.isBusy()) {
+                    /* Grab Sample 4 */
+                    follower.followPath(paths.Outtake4, true);
+                    pathState = 8;
+                }
+                break;
+            case 8:
+                if(!follower.isBusy()) {
+                    /* Score Sample 4 */
+                    follower.followPath(paths.Leave, true);
+                    pathState = 9;
+                }
+                break;
+            case 9:
+                if(!follower.isBusy()) {
+                    /* Parked - End autonomous */
+                    pathState = -1;
+                }
+                break;
+        }
         return pathState;
     }
 }
