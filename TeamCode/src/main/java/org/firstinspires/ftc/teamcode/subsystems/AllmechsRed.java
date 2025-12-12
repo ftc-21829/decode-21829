@@ -5,7 +5,6 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.pedropathing.follower.Follower;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -25,7 +24,7 @@ import com.rowanmcalpin.nextftc.core.command.utility.delays.WaitUntil;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Config
-public class AllMechs {
+public class AllmechsRed {
     public DcMotorEx intake, outtakeLow, outtakeHigh, transfer;
     public Follower follower;
     public ColorSensor colorSensor;
@@ -70,7 +69,7 @@ public class AllMechs {
     public static double butt_kicker_down = 0.88;
     public static double butt_kicker_up = 0.4675;
 
-
+    public static int TRACKING_PIPELINE = 1;
 
     // --- shooter tuning formulas from user ---
     // hood: y = HOOD_A * HOOD_B^x
@@ -91,7 +90,7 @@ public class AllMechs {
     private boolean prevDpadDown = false;
     private boolean prevLogButton = false;
 
-    public AllMechs(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
+    public AllmechsRed(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
         this.gamepad2 = gamepad2;
         this.telemetry = new MultipleTelemetry();
@@ -103,15 +102,6 @@ public class AllMechs {
         outtakeLow = hardwareMap.get(DcMotorEx.class, "outtake Low");
         outtakeHigh = hardwareMap.get(DcMotorEx.class, "outtake High");
         outtakeHigh.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        outtakeHigh.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        outtakeLow.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        outtakeHigh.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeHigh.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        outtakeLow.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeLow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
 
@@ -135,7 +125,7 @@ public class AllMechs {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100);
         limelight.start();
-        limelight.pipelineSwitch(0);
+        limelight.pipelineSwitch(TRACKING_PIPELINE);
     }
 
     public void updateLimelightData() {
@@ -224,11 +214,7 @@ public class AllMechs {
                 new InstantCommand(() -> outtakeLow.setPower(0))
         );
     }
-    public Command turretOn() {
-        return new ParallelGroup(
-            new InstantCommand(() -> setTurretTrackingActive(!isTurretTrackingActive())),
-            new InstantCommand(() -> gamepad1.rumbleBlips(1)));
-    }
+    public Command turretOn() { return new InstantCommand(() -> setTurretTrackingActive(!isTurretTrackingActive())); }
     public Command turretOff() { return new InstantCommand(() -> setTurretTrackingActive(false)); }
 
     public Command ButtKicker() {
@@ -262,9 +248,9 @@ public class AllMechs {
     public double computeHoodPositionFromDistance(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
 
-        return -0.0000455193 * Math.pow(distanceMM, 2)
-                + 0.0198468 * distanceMM
-                -1.24468   ;
+        return -0.0000566307 * Math.pow(distanceMM, 2)
+                + 0.0233367 * distanceMM
+                -1.49896   ;
 
     }
 
@@ -272,8 +258,8 @@ public class AllMechs {
         if (distanceMM <= 0) return 0.0;
         shooterTargetVelocity =
                 0.0426503   * Math.pow(distanceMM, 2)
-                - 8.80296 * distanceMM
-                + 1675.60075; // user can replace equation
+                        - 8.85296 * distanceMM
+                        + 1675.60075; // user can replace equation
         return shooterTargetVelocity;
     }
 

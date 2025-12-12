@@ -10,15 +10,15 @@ import com.rowanmcalpin.nextftc.core.command.CommandManager;
 import com.rowanmcalpin.nextftc.core.command.groups.ParallelGroup;
 
 @TeleOp(name = "Turret CRServo TeleOp")
-public class Teleop extends OpMode {
-    AllMechs robot;
+public class TeleopRed extends OpMode {
+    AllmechsRed robot;
     boolean Outtake;
     Gamepad currentGamepad1, previousGamepad1, currentGamepad2, previousGamepad2;
     private final FtcDashboard dash = FtcDashboard.getInstance();
 
     @Override
     public void init() {
-        robot = new AllMechs(hardwareMap, gamepad1, gamepad2);
+        robot = new AllmechsRed(hardwareMap, gamepad1, gamepad2);
 
         currentGamepad1 = new Gamepad();
         currentGamepad2 = new Gamepad();
@@ -122,12 +122,12 @@ public class Teleop extends OpMode {
         }
 
         if (Outtake){
-        robot.periodicShooterUpdateAndApplyPID();
+            robot.periodicShooterUpdateAndApplyPID();
 
         }
         if (!Outtake){
             CommandManager.INSTANCE.scheduleCommand(
-                   robot.OuttakeOff()
+                    robot.OuttakeOff()
             );
         }
 
