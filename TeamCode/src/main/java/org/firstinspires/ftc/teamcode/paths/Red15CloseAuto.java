@@ -75,83 +75,85 @@ public class Red15CloseAuto extends OpMode {
     public void autonomousUpdate() {
         switch (pathState) {
             case 0:
-//                // Start shooting sequence
-//                actionTimer.resetTimer();
-//                CommandManager.INSTANCE.scheduleCommand(
-//                        new ParallelGroup(
-//                                robot.OuttakeOn(),
-//                                robot.turretOn()
-//                        )
-//
-//
-//                        );
+                // Start shooting sequence
+                actionTimer.resetTimer();
+                CommandManager.INSTANCE.scheduleCommand(
+                        new ParallelGroup(
+                                robot.OuttakeOn(),
+                                robot.turretOn()
+                        )
+
+
+                );
                 follower.followPath(leavePath);
                 pathState = 1;
                 break;
 
             case 1:
                 // Wait for shooting to complete (adjust time as needed)
-//                if (actionTimer.getElapsedTimeSeconds() > 4.5) {
-//                    // Kick the sample out
-//
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            new SequentialGroup(
-//                                    robot.transferSlow(),
-//                                    robot.doorOpen(),
-//                                    robot.intakeOn()
-//                            ));
-                if (!follower.isBusy()) {
-                    pathState = 2; // Done
+                if (actionTimer.getElapsedTimeSeconds() > 4.5) {
+                    // Kick the sample out
+
+                    CommandManager.INSTANCE.scheduleCommand(
+                            new SequentialGroup(
+                                    robot.transferSlow(),
+                                    robot.doorOpen(),
+                                    robot.intakeOn()
+                            ));
+                    if (!follower.isBusy()) {
+                        pathState = 2; // Done
+                        actionTimer.resetTimer();
+                    }
+                    break;
 
                 }
-                break;
-//                    actionTimer.resetTimer();
-//                }
 
 
             case 2:
                 // Wait for butt kicker to complete
-//                if (actionTimer.getElapsedTimeSeconds() > 2) {
-//
-//                    // Turn off mechanisms
-//                    CommandManager.INSTANCE.scheduleCommand(
-//
-//                                    robot.ButtKicker()
-//
-//                            );
+                if (actionTimer.getElapsedTimeSeconds() > 2) {
 
-                // Start leaving
-//                    pathState = 3;
-//                }
+                    // Turn off mechanisms
+                    CommandManager.INSTANCE.scheduleCommand(
+
+                            robot.ButtKicker()
+
+                    );
+
+//                 Start leaving
+                    actionTimer.resetTimer();
+                    pathState = 3;
+
+                }
                 break;
 
             case 3:
                 // Wait for butt kicker to complete
-//                if (actionTimer.getElapsedTimeSeconds() > 5) {
-//                    // Turn off mechanisms
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            new ParallelGroup(
-//                                    robot.transferOff(),
-//                                    robot.OuttakeOff(),
-//                                    robot.doorClose(),
-//                                    robot.intakeOff()
-//                            ));
-                // Start leaving
-//                    follower.followPath(leavePath);
-//                    pathState = 4;
-//                }
-//                break;
-//            case 4:
-//                // Wait for path to complete
-//                if (!follower.isBusy()) {
-//                    pathState = 5; // Done
-//
-//                }
-//                break;
-//
-//            case 5:
-//                // Autonomous complete - do nothing
-//                break;
+                if (actionTimer.getElapsedTimeSeconds() > 5) {
+                    // Turn off mechanisms
+                    CommandManager.INSTANCE.scheduleCommand(
+                            new ParallelGroup(
+                                    robot.transferOff(),
+                                    robot.OuttakeOff(),
+                                    robot.doorClose(),
+                                    robot.intakeOff()
+                            ));
+//                 Start leaving
+                    follower.followPath(leavePath);
+                    pathState = 4;
+                }
+                break;
+            case 4:
+                // Wait for path to complete
+                if (!follower.isBusy()) {
+                    pathState = 5; // Done
+
+                }
+                break;
+
+            case 5:
+                // Autonomous complete - do nothing
+                break;
         }
     }
 }
