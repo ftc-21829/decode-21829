@@ -7,6 +7,8 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -68,7 +70,7 @@ public class AllMechs {
     public static double door_open_pos = 0.75;
     public static double door_close_pos = 0.6;
     public static double butt_kicker_down = 0.88;
-    public static double butt_kicker_up = 0.4675;
+    public static double butt_kicker_up = 0.49; //0.4675
 
 
 
@@ -85,6 +87,8 @@ public class AllMechs {
     private double lastValidDistanceMM = -1.0;
     private double targetOuttakePower = 0.0;
     private boolean shooterEnabled = false;
+    private double pastCurrent = 0;
+    private double current = 0;
 
     // rising edge detectors for user inputs
     private boolean prevDpadUp = false;
@@ -202,15 +206,33 @@ public class AllMechs {
 
     // ------------------------ Commands ------------------------
 
-    public Command intakeOn() { return new InstantCommand(() -> intake.setPower(1));  }
+    public Command intakeOn() {return new InstantCommand(()-> intake.setPower(1));}
     public Command intakeOff() { return new InstantCommand(() -> intake.setPower(0)); }
     public Command doorOpen() { return new InstantCommand(() -> door.setPosition(door_open_pos)); }
     public Command doorClose() { return new InstantCommand(() -> door.setPosition(door_close_pos)); }
-    public Command transferOn() { return new InstantCommand(() -> transfer.setPower(1)); }
+    public Command transferOn() { return new InstantCommand(() -> transfer.setPower(0.75)); }
     public Command transferOff() { return new InstantCommand(() -> transfer.setPower(0)); }
     public Command transferSlow() { return new InstantCommand(() -> transfer.setPower(0.75)); }
 
     // ---- OUTTAKE now uses PID flywheel + hood ----
+    public Command OuttakeOne(){
+                            return new SequentialGroup(
+                                    new ParallelGroup(
+                                            transferOn(),
+                                            doorOpen(),
+                                            intakeOn()
+                                    ),
+
+                                    new Delay(1.75),
+                                    ButtKicker(),
+                                    new ParallelGroup(
+                                            OuttakeOff(),
+                                            intakeOff(),
+                                            transferOff(),
+                                            doorClose()
+                                )
+                        );
+    }
     public Command OuttakeOn() {
         return new InstantCommand(() -> periodicShooterUpdateAndApplyPID());
     }
@@ -256,6 +278,8 @@ public class AllMechs {
                 )
         );
     }
+
+
 
     // ------------------------ Shooter helpers ------------------------
 

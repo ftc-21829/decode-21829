@@ -8,6 +8,10 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.rowanmcalpin.nextftc.core.command.Command;
 import com.rowanmcalpin.nextftc.core.command.CommandManager;
 import com.rowanmcalpin.nextftc.core.command.groups.ParallelGroup;
+import com.rowanmcalpin.nextftc.core.command.utility.InstantCommand;
+import com.rowanmcalpin.nextftc.core.command.utility.delays.WaitUntil;
+
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 @TeleOp(name = "Turret CRServo TeleOp")
 public class Teleop extends OpMode {
@@ -97,7 +101,13 @@ public class Teleop extends OpMode {
                             robot.transferOn(),
                             robot.intakeOn(),
                             robot.transferCheck(),
-                            robot.doorOpen()
+                            robot.doorOpen(),
+                            new WaitUntil(()->{
+                                double current = robot.intake.getCurrent(CurrentUnit.MILLIAMPS);
+                                return current>5700;
+                            }).then(
+                                    robot.intakeOff()
+                            )
                     )
             );
         }
@@ -120,6 +130,7 @@ public class Teleop extends OpMode {
             Outtake = true;
 
         }
+
 
         if (Outtake){
         robot.periodicShooterUpdateAndApplyPID();
@@ -144,6 +155,11 @@ public class Teleop extends OpMode {
         if(gamepad2.cross){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.turretOff()
+            );
+        }
+        if(gamepad2.circle){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.OuttakeOne()
             );
         }
         if(gamepad1.dpad_down){
@@ -171,6 +187,7 @@ public class Teleop extends OpMode {
         telemetry.addLine("=== TURRET STATUS ===");
         telemetry.addData("Control",
                 robot.isTurretTrackingActive() ? "AUTO (R1 to disable)" : "READY (R1 to enable)");
+        telemetry.addData("Current", robot.intake.getCurrent(CurrentUnit.MILLIAMPS));
 
         telemetry.update();
     }

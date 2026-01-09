@@ -9,8 +9,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.rowanmcalpin.nextftc.core.command.CommandManager;
 
-@TeleOp(name = "Flywheel PID Tester (Distance + PID)", group = "Testing")
-public class FlywheelDistanceLogger extends OpMode {
+@TeleOp(name = "VelocityPIDTest", group = "Testing")
+public class VelocityDistanceLogger extends OpMode {
 
     AllMechs r;
 
@@ -22,13 +22,10 @@ public class FlywheelDistanceLogger extends OpMode {
     // Target velocity
     private double targetVelocity = 0;
 
-    // PID
-    private double kP = 0.003;
-    private double kI = 0.0;
-    private double kD = 0.00000005;
-
-    private double integral = 0;
-    private double lastError = 0;
+    // Velocity PID Constants (from VelocityPID class)
+    private double kV = 0.0006;
+    private double kS = 0.025;
+    private double kP = 0.0015;
 
     private double hoodPos = 0.2;
 
@@ -53,7 +50,6 @@ public class FlywheelDistanceLogger extends OpMode {
             return;
         }
 
-
         outtakeHigh.setDirection(DcMotor.Direction.REVERSE);
 
         outtakeLow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -74,15 +70,12 @@ public class FlywheelDistanceLogger extends OpMode {
         lastHighPos = outtakeHigh.getCurrentPosition();
         lastTime = System.nanoTime();
 
-        // Confirm motors
-
         telemetry.addLine("INIT OK — Motors spinning lightly.");
         telemetry.update();
     }
 
-
     // ----------------------------------------------------------------------
-    //  NEW FUNCTION — gets distance using vertical angle (ty)
+    //  Gets distance using vertical angle (ty)
     // ----------------------------------------------------------------------
     public double getDistanceFromLimelight(LLResult r) {
         if (r == null || !r.isValid()) return -1;
@@ -97,8 +90,30 @@ public class FlywheelDistanceLogger extends OpMode {
 
         return (TARGET_HEIGHT_MM - CAMERA_HEIGHT_MM) / Math.tan(totalAngleRad);
     }
-    // ----------------------------------------------------------------------
 
+    // ----------------------------------------------------------------------
+    //  Feedforward calculation (from VelocityPID)
+    // ----------------------------------------------------------------------
+    private double feedforward(double targetVel) {
+        if (Math.abs(targetVel) < 1e-6) return 0;
+        double sign = Math.signum(targetVel);
+        return kS * sign + kV * targetVel;
+    }
+
+    // ----------------------------------------------------------------------
+    //  Feedback calculation (from VelocityPID)
+    // ----------------------------------------------------------------------
+    private double feedback(double targetVel, double currentVel) {
+        double error = targetVel - currentVel;
+        return kP * error;
+    }
+
+    // ----------------------------------------------------------------------
+    //  Clamp utility (from VelocityPID)
+    // ----------------------------------------------------------------------
+    private double clamp(double v, double min, double max) {
+        return Math.max(min, Math.min(max, v));
+    }
 
     @Override
     public void loop() {
@@ -106,8 +121,6 @@ public class FlywheelDistanceLogger extends OpMode {
         // ---- READ LIMELIGHT DISTANCE ----
         LLResult result = limelight != null ? limelight.getLatestResult() : null;
         double distance = getDistanceFromLimelight(result);
-
-
 
         // ---- VELOCITY INCREASE ----
         boolean inc = gamepad1.right_bumper;
@@ -134,23 +147,21 @@ public class FlywheelDistanceLogger extends OpMode {
         double dt = (now - lastTime) / 1e9;
         double lowVel = (low - lastLowPos) / dt;
         double highVel = (high - lastHighPos) / dt;
-        double actualVel = (lowVel + highVel) / 2.0;
+        double currentVel = (lowVel + highVel) / 2.0;
 
         lastLowPos = low;
         lastHighPos = high;
         lastTime = now;
 
-        // ---- PID ----
-        double error = targetVelocity - actualVel;
-        integral += error * dt;
-        double derivative = (error - lastError) / dt;
-        lastError = error;
+        // ---- VELOCITY PID CONTROL (from VelocityPID) ----
+        double ff = feedforward(targetVelocity);
+        double fb = feedback(targetVelocity, currentVel);
 
-        double output = kP * error + kI * integral + kD * derivative;
-        output = Math.max(0, Math.min(output, 1));
+        double power = ff + fb;
+        power = clamp(power, 0, 1);
 
-        outtakeLow.setPower(output);
-        outtakeHigh.setPower(output);
+        outtakeLow.setPower(power);
+        outtakeHigh.setPower(power);
 
         // ---- HOOD ----
         if (gamepad1.dpad_up) hoodPos += 0.01;
@@ -177,19 +188,18 @@ public class FlywheelDistanceLogger extends OpMode {
             );
         }
 
-        hoodPos = Math.max(0, Math.min(1, hoodPos));
+        hoodPos = clamp(hoodPos, 0, 1);
         hood.setPosition(hoodPos);
-
 
         CommandManager.INSTANCE.run();
 
         // ---- TELEMETRY ----
         telemetry.addData("Target Vel", targetVelocity);
-        telemetry.addData("Actual Vel", actualVel);
-        telemetry.addData("Power", output);
+        telemetry.addData("Current Vel", currentVel);
+        telemetry.addData("Power", power);
+        telemetry.addData("Feedforward", ff);
+        telemetry.addData("Feedback", fb);
         telemetry.addData("Hood Pos", hoodPos);
-
-        // NEW TELEMETRY
         telemetry.addData("Limelight Valid?", result != null && result.isValid());
         telemetry.addData("Distance (mm)", distance);
 
