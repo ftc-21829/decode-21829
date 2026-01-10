@@ -81,7 +81,7 @@ public class Blue15FarAutoFirst extends OpMode {
                                 robot.OuttakeOn())
 
 
-                        );
+                );
 
                 pathState = 1;
                 break;
@@ -95,11 +95,11 @@ public class Blue15FarAutoFirst extends OpMode {
                             new SequentialGroup(
                                     robot.OuttakeOne()
                             ));
-                if (!follower.isBusy()) {
-                    pathState = 2; // Done
-                    actionTimer.resetTimer();
-                }
-                break;
+                    if (!follower.isBusy()) {
+                        pathState = 2; // Done
+                        actionTimer.resetTimer();
+                    }
+                    break;
 
                 }
 
