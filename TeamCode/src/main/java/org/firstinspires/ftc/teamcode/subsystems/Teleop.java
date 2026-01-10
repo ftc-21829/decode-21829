@@ -104,7 +104,7 @@ public class Teleop extends OpMode {
                             robot.doorOpen(),
                             new WaitUntil(()->{
                                 double current = robot.intake.getCurrent(CurrentUnit.MILLIAMPS);
-                                return current>5700;
+                                return current> (-1093.8*robot.battery.getVoltage()*robot.battery.getVoltage())+(27011*robot.battery.getVoltage())-160045;
                             }).then(
                                     robot.intakeOff()
                             )

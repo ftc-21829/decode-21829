@@ -8,7 +8,6 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -17,6 +16,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.rowanmcalpin.nextftc.core.command.Command;
 import com.rowanmcalpin.nextftc.core.command.groups.ParallelGroup;
 import com.rowanmcalpin.nextftc.core.command.groups.SequentialGroup;
@@ -94,6 +94,8 @@ public class AllMechs {
     private boolean prevDpadUp = false;
     private boolean prevDpadDown = false;
     private boolean prevLogButton = false;
+    VoltageSensor battery;
+
 
     public AllMechs(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
@@ -101,6 +103,7 @@ public class AllMechs {
         this.telemetry = new MultipleTelemetry();
 
         follower = Constants.createFollower(hardwareMap);
+
 
         colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
 
@@ -110,6 +113,7 @@ public class AllMechs {
 
         outtakeHigh.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         outtakeLow.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        battery = hardwareMap.voltageSensor.iterator().next();
 
         outtakeHigh.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeHigh.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -212,18 +216,19 @@ public class AllMechs {
     public Command doorClose() { return new InstantCommand(() -> door.setPosition(door_close_pos)); }
     public Command transferOn() { return new InstantCommand(() -> transfer.setPower(0.75)); }
     public Command transferOff() { return new InstantCommand(() -> transfer.setPower(0)); }
+    public Command transferfull() {return new InstantCommand(()-> transfer.setPower(1));}
     public Command transferSlow() { return new InstantCommand(() -> transfer.setPower(0.75)); }
 
     // ---- OUTTAKE now uses PID flywheel + hood ----
     public Command OuttakeOne(){
                             return new SequentialGroup(
                                     new ParallelGroup(
-                                            transferOn(),
+                                            transferfull(),
                                             doorOpen(),
                                             intakeOn()
                                     ),
 
-                                    new Delay(1.75),
+                                    new Delay(1),
                                     ButtKicker(),
                                     new ParallelGroup(
                                             OuttakeOff(),
@@ -314,6 +319,8 @@ public class AllMechs {
             }
         }
     }
+
+
 
     /** Apply PID-controlled flywheel velocity and hood position */
     public void periodicShooterUpdateAndApplyPID() {
