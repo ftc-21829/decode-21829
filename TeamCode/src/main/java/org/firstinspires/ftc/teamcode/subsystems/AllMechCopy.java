@@ -4,6 +4,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -16,6 +17,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.rowanmcalpin.nextftc.core.command.Command;
 import com.rowanmcalpin.nextftc.core.command.groups.ParallelGroup;
 import com.rowanmcalpin.nextftc.core.command.groups.SequentialGroup;
@@ -24,6 +26,7 @@ import com.rowanmcalpin.nextftc.core.command.utility.delays.Delay;
 import com.rowanmcalpin.nextftc.core.command.utility.delays.WaitUntil;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.testing.RTPAxon;
 
 @Config
 public class AllMechCopy {
@@ -41,9 +44,13 @@ public class AllMechCopy {
     public MultipleTelemetry telemetry;
     public Gamepad gamepad1;
     public Gamepad gamepad2;
+    private RTPAxon axon;
+    VoltageSensor battery;
+
+
 
     // ========== TURRET PID CONSTANTS ==========
-    public static double turret_kP = 0.015, turret_kI = 0.0005, turret_kD = 0.004;
+    public static double turret_kP = 0.005, turret_kI = 0.0005, turret_kD = 0.004;
     public static double turret_tolerance = 1.0;
     public static double turret_max_power = 1;
     public static double turret_deadband = 0.25;
@@ -52,8 +59,8 @@ public class AllMechCopy {
 
     // ========== FIELD-RELATIVE TRACKING CONSTANTS ==========
     // Target position on field (in inches) - ADJUST FOR YOUR TARGET
-    public static double TARGET_X = 12.0; // X coordinate of basket/target
-    public static double TARGET_Y = 137.0; // Y coordinate of basket/target
+    public static double TARGET_X = 0; // X coordinate of basket/target
+    public static double TARGET_Y = 144; // Y coordinate of basket/target
 
     // Turret offset from robot center (radians) - adjust if turret isn't centered
     public static double TURRET_OFFSET = 0.0;
@@ -100,6 +107,9 @@ public class AllMechCopy {
     private boolean prevDpadUp = false;
     private boolean prevDpadDown = false;
     private boolean prevLogButton = false;
+    public static double kps = 0.00515;
+    public static double kis = 0;
+    public static double kds = 0.000045;
 
     public AllMechCopy(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
@@ -107,12 +117,20 @@ public class AllMechCopy {
         this.telemetry = new MultipleTelemetry();
 
         follower = Constants.createFollower(hardwareMap);
+        AnalogInput encoder = hardwareMap.get(AnalogInput.class, "turretAnalog");
+        turretServo = hardwareMap.get(CRServo.class, "turret");
 
+        axon = new RTPAxon(turretServo, encoder);
+
+
+
+        axon.setMaxPower(1);
         colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
 
         outtakeLow = hardwareMap.get(DcMotorEx.class, "outtake Low");
         outtakeHigh = hardwareMap.get(DcMotorEx.class, "outtake High");
         outtakeHigh.setDirection(DcMotorSimple.Direction.REVERSE);
+        battery = hardwareMap.voltageSensor.iterator().next();
 
         outtakeHigh.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         outtakeLow.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -121,12 +139,12 @@ public class AllMechCopy {
         outtakeHigh.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         outtakeLow.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeLow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
+
 
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
 
-        turretServo = hardwareMap.get(CRServo.class, "turret");
-        turretServo.setPower(0);
 
         door = hardwareMap.get(Servo.class, "door");
         door.setPosition(door_open_pos);
@@ -139,6 +157,8 @@ public class AllMechCopy {
         lastLowPosPID = outtakeLow.getCurrentPosition();
         lastHighPosPID = outtakeHigh.getCurrentPosition();
         lastTimePID = System.nanoTime();
+        axon.setPidCoeffs(kps, kis, kds);
+
     }
 
     private void initializeLimelight(HardwareMap hardwareMap) {
@@ -187,12 +207,19 @@ public class AllMechCopy {
 
     public void setTurretTrackingActive(boolean active) {
         turretTrackingActive = active;
+
         if (!active) {
-            turretServo.setPower(0);
+            axon.setRtp(false);
+            axon.setPower(0.0);
             integral = 0.0;
             lastError = 0.0;
         }
     }
+
+    public boolean FieldRelativeTrue() {
+        return USE_FIELD_RELATIVE_TRACKING;
+    }
+
 
     public boolean isTurretTrackingActive() {
         return turretTrackingActive;
@@ -220,116 +247,204 @@ public class AllMechCopy {
         double angleToTarget = Math.atan2(dy, dx);
 
         // Calculate turret angle relative to robot
-        double turretAngle = angleToTarget - robotHeading - TURRET_OFFSET;
+        double turretAngle = angleToTarget - robotHeading;
 
         // Normalize to [-π, π]
         turretAngle = Math.atan2(Math.sin(turretAngle), Math.cos(turretAngle));
 
         // Convert to degrees for error (to match Limelight tx units)
-        return Math.toDegrees(turretAngle);
+        return Math.toDegrees(turretAngle) *2.3793;
     }
 
     /**
      * Get the distance from robot to target using Pinpoint odometry.
      * Returns distance in inches.
      */
-    public double getDistanceToTarget() {
-        Pose robotPose = follower.getPose();
-        double dx = TARGET_X - robotPose.getX();
-        double dy = TARGET_Y - robotPose.getY();
-        return Math.sqrt(dx * dx + dy * dy);
-    }
 
     /**
      * Main turret tracking update loop.
      * Supports both field-relative (Pinpoint) and vision-based (Limelight) tracking.
      */
+
+
     public void updateTurretTracking() {
         if (!turretTrackingActive) {
-            turretServo.setPower(0);
+            axon.setPower(0.0);
             return;
         }
 
-        double error;
-
+        // ================= FIELD RELATIVE =================
         if (USE_FIELD_RELATIVE_TRACKING) {
-            // Field-relative tracking using Pinpoint odometry
-            error = calculateFieldRelativeTurretError();
-        } else {
-            // Vision-based tracking using Limelight (original method)
-            if (!hasValidTarget()) {
-                turretServo.setPower(0);
-                return;
-            }
-            error = currentResult.getTx();
+
+            // Field-relative uses RTP
+            axon.setRtp(true);
+
+            double error = calculateFieldRelativeTurretError();
+            axon.update(); // <--- THIS LINE IS MISSING
+
+
+            // Deadband
+
+
+            // Target rotation = error in degrees
+            axon.setTargetRotation(error);
+            return;
         }
 
-        // Apply deadband
+        // ================= LIMELIGHT =================
+        // Vision-based uses OPEN LOOP POWER
+        axon.setRtp(false);
+
+        if (!hasValidTarget()) {
+            axon.setPower(0.0);
+            return;
+        }
+
+        double error = currentResult.getTx();
+
+        // Deadband
         if (Math.abs(error) < turret_deadband) {
-            turretServo.setPower(0);
+            axon.setPower(0.0);
             integral = 0.0;
             lastError = 0.0;
             return;
         }
 
-        // PID control
+        // PID → power
         integral += error;
         integral = Math.max(-100.0, Math.min(100.0, integral));
         double derivative = error - lastError;
         double output = (turret_kP * error) + (turret_kI * integral) + (turret_kD * derivative);
+        output = -output;
         lastError = error;
 
-        output = -output;
         output = Math.max(-turret_max_power, Math.min(turret_max_power, output));
-
-        turretServo.setPower(output);
+        axon.setPower(output);
     }
+//    public void updateTurretTracking() {
+//        if (!turretTrackingActive) {
+//            axon.setPower(0.0);
+//            return;
+//        }
+//
+//        // ================= FIELD RELATIVE =================
+//        if (USE_FIELD_RELATIVE_TRACKING) {
+//            axon.setRtp(true);
+//
+//            double errorDegrees = calculateFieldRelativeTurretError();
+//
+//            // Get current tracking error from RTP
+//            double currentError = axon.getTargetRotation() - axon.getTotalRotation();
+//
+//            // Calculate how much to adjust target (smooth tracking)
+//            double adjustment = errorDegrees - currentError;
+//
+//            // Only adjust if significant change
+//            if (Math.abs(adjustment) > 0.5) {
+//                axon.changeTargetRotation(adjustment);
+//            }
+//
+//            axon.update();
+//
+//            telemetry.addData("Field Error", "%.2f°", errorDegrees);
+//            telemetry.addData("RTP Error", "%.2f°", currentError);
+//            telemetry.addData("Total Rotation", "%.2f°", axon.getTotalRotation());
+//
+//            return;
+//        }
+//
+//        // ... rest of code
+//
+//
+//        // ================= LIMELIGHT =================
+//        axon.setRtp(false);
+//
+//        if (!hasValidTarget()) {
+//            axon.setPower(0.0);
+//            return;
+//        }
+//
+//        double error = currentResult.getTx();
+//
+//        if (Math.abs(error) < turret_deadband) {
+//            axon.setPower(0.0);
+//            integral = 0.0;
+//            lastError = 0.0;
+//            return;
+//        }
+//
+//        integral += error;
+//        integral = Math.max(-100.0, Math.min(100.0, integral));
+//        double derivative = error - lastError;
+//        double output = (turret_kP * error) + (turret_kI * integral) + (turret_kD * derivative);
+//        output = -output;
+//        lastError = error;
+//
+//        output = Math.max(-turret_max_power, Math.min(turret_max_power, output));
+//        axon.setPower(output);
+//    }
+
 
     public boolean isTurretAligned() {
-        if (USE_FIELD_RELATIVE_TRACKING) {
-            double error = calculateFieldRelativeTurretError();
-            return Math.abs(error) < turret_tolerance;
-        } else {
-            return hasValidTarget() && Math.abs(currentResult.getTx()) < turret_tolerance;
-        }
+
+        return hasValidTarget() && Math.abs(currentResult.getTx()) < turret_tolerance;
+
     }
 
     // ========== COMMANDS ==========
 
-    public Command intakeOn() { return new InstantCommand(() -> intake.setPower(1)); }
+    public Command intakeOn() {return new InstantCommand(()-> intake.setPower(1));}
     public Command intakeOff() { return new InstantCommand(() -> intake.setPower(0)); }
     public Command doorOpen() { return new InstantCommand(() -> door.setPosition(door_open_pos)); }
     public Command doorClose() { return new InstantCommand(() -> door.setPosition(door_close_pos)); }
-    public Command transferOn() { return new InstantCommand(() -> transfer.setPower(1)); }
+    public Command transferOn() { return new InstantCommand(() -> transfer.setPower(0.75)); }
     public Command transferOff() { return new InstantCommand(() -> transfer.setPower(0)); }
+    public Command transferfull() {return new InstantCommand(()-> transfer.setPower(1));}
     public Command transferSlow() { return new InstantCommand(() -> transfer.setPower(0.75)); }
 
+    // ---- OUTTAKE now uses PID flywheel + hood ----
+    public Command OuttakeOne(){
+        return new SequentialGroup(
+                new ParallelGroup(
+                        transferfull(),
+                        doorOpen(),
+                        intakeOn()
+                ),
+
+                new Delay(1),
+                ButtKicker(),
+                new ParallelGroup(
+                        OuttakeOff(),
+                        intakeOff(),
+                        transferOff(),
+                        doorClose()
+                )
+        );
+    }
     public Command OuttakeOn() {
         return new InstantCommand(() -> periodicShooterUpdateAndApplyPID());
     }
 
-    public Command IntakeOut() {
+    public Command IntakeOut(){
         return new InstantCommand(() -> intake.setPower(-1));
     }
-
     public Command OuttakeOff() {
         return new ParallelGroup(
                 new InstantCommand(() -> outtakeHigh.setPower(0)),
                 new InstantCommand(() -> outtakeLow.setPower(0))
         );
     }
-
     public Command turretOn() {
         return new ParallelGroup(
-                new InstantCommand(() -> periodicShooterUpdateAndApplyPID()),
-                new InstantCommand(() -> gamepad1.rumbleBlips(1))
-        );
+                new InstantCommand(() -> setTurretTrackingActive(!isTurretTrackingActive())));
     }
-
-    public Command turretOff() {
-        return new InstantCommand(() -> setTurretTrackingActive(false));
+    public Command turret() {
+        return new InstantCommand(() -> {
+            setTurretTrackingActive(false);
+            USE_FIELD_RELATIVE_TRACKING = !USE_FIELD_RELATIVE_TRACKING;
+            setTurretTrackingActive(true);
+        });
     }
-
     public Command ButtKicker() {
         return new SequentialGroup(
                 new InstantCommand(() -> buttkicker.setPosition(butt_kicker_up)),
@@ -355,7 +470,6 @@ public class AllMechCopy {
                 )
         );
     }
-
     // ========== SHOOTER HELPERS ==========
 
     public double computeHoodPositionFromDistance(double distanceMM) {

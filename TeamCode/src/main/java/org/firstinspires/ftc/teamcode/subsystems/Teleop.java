@@ -13,16 +13,16 @@ import com.rowanmcalpin.nextftc.core.command.utility.delays.WaitUntil;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
-@TeleOp(name = "Turret CRServo TeleOp")
+@TeleOp(name = "Turret CRServo TeleOp - Blue")
 public class Teleop extends OpMode {
-    AllMechs robot;
+    AllMechCopy robot;
     boolean Outtake;
     Gamepad currentGamepad1, previousGamepad1, currentGamepad2, previousGamepad2;
     private final FtcDashboard dash = FtcDashboard.getInstance();
 
     @Override
     public void init() {
-        robot = new AllMechs(hardwareMap, gamepad1, gamepad2);
+        robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2);
 
         currentGamepad1 = new Gamepad();
         currentGamepad2 = new Gamepad();
@@ -60,17 +60,6 @@ public class Teleop extends OpMode {
         robot.updateLimelightData();
         boolean hasTarget = robot.hasValidTarget();
         LLResult result = hasTarget ? robot.limelight.getLatestResult() : null;
-
-        // ========== TURRET TRACKING TOGGLE ==========
-        if (currentGamepad1.right_bumper && !previousGamepad1.right_bumper) {
-            robot.setTurretTrackingActive(!robot.isTurretTrackingActive());
-        }
-
-        // Disable tracking if target is lost
-//        if (!hasTarget && robot.isTurretTrackingActive()) {
-//            robot.setTurretTrackingActive(false);
-//        }
-        // ============= UPDATE SHOOTER  ============
 
 
         // ========== UPDATE TURRET ==========
@@ -152,9 +141,10 @@ public class Teleop extends OpMode {
                     robot.turretOn()
             );
         }
+
         if(gamepad2.cross){
             CommandManager.INSTANCE.scheduleCommand(
-                    robot.turretOff()
+                    robot.turret()
             );
         }
         if(gamepad2.circle){
@@ -184,10 +174,13 @@ public class Teleop extends OpMode {
 
 
         telemetry.addLine();
+
         telemetry.addLine("=== TURRET STATUS ===");
         telemetry.addData("Control",
                 robot.isTurretTrackingActive() ? "AUTO (R1 to disable)" : "READY (R1 to enable)");
         telemetry.addData("Current", robot.intake.getCurrent(CurrentUnit.MILLIAMPS));
+        telemetry.addData("Field Active: ", robot.FieldRelativeTrue());
+
 
         telemetry.update();
     }

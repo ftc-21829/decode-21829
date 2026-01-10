@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -101,6 +102,8 @@ public class AllMechs {
         this.gamepad1 = gamepad1;
         this.gamepad2 = gamepad2;
         this.telemetry = new MultipleTelemetry();
+
+        follower.setStartingPose(new Pose(77, 8));
 
         follower = Constants.createFollower(hardwareMap);
 

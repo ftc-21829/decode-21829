@@ -151,7 +151,6 @@ public class TeleopTest extends OpMode {
         telemetry.addLine();
         telemetry.addLine("=== TARGET INFO ===");
         telemetry.addData("Target", "(%.1f, %.1f)", robot.TARGET_X, robot.TARGET_Y);
-        telemetry.addData("Distance", "%.1f in", robot.getDistanceToTarget());
 
         telemetry.addLine();
         telemetry.addLine("=== TURRET STATUS ===");
