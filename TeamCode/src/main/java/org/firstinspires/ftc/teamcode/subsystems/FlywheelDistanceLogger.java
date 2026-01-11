@@ -12,7 +12,7 @@ import com.rowanmcalpin.nextftc.core.command.CommandManager;
 @TeleOp(name = "Flywheel PID Tester (Distance + PID)", group = "Testing")
 public class FlywheelDistanceLogger extends OpMode {
 
-    AllMechs r;
+    AllMechCopy r;
 
     private DcMotorEx outtakeLow;
     private DcMotorEx outtakeHigh;
@@ -60,7 +60,7 @@ public class FlywheelDistanceLogger extends OpMode {
         outtakeHigh.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         hood.setPosition(hoodPos);
-        r = new AllMechs(hardwareMap, gamepad1, gamepad2);
+        r = new AllMechCopy(hardwareMap, gamepad1, gamepad2);
 
         // Limelight (safe)
         try {

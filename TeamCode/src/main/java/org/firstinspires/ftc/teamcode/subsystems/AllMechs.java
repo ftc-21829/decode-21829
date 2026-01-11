@@ -103,7 +103,6 @@ public class AllMechs {
         this.gamepad2 = gamepad2;
         this.telemetry = new MultipleTelemetry();
 
-        follower.setStartingPose(new Pose(77, 8));
 
         follower = Constants.createFollower(hardwareMap);
 
@@ -213,7 +212,7 @@ public class AllMechs {
 
     // ------------------------ Commands ------------------------
 
-    public Command intakeOn() {return new InstantCommand(()-> intake.setPower(1));}
+    public Command intakeOn() {return new InstantCommand(()-> intake.setPower(0.95));}
     public Command intakeOff() { return new InstantCommand(() -> intake.setPower(0)); }
     public Command doorOpen() { return new InstantCommand(() -> door.setPosition(door_open_pos)); }
     public Command doorClose() { return new InstantCommand(() -> door.setPosition(door_close_pos)); }

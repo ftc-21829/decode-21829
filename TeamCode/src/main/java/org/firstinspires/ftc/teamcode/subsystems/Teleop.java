@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -33,6 +34,8 @@ public class Teleop extends OpMode {
         telemetry.addLine("=== CONTROLS ===");
         telemetry.addData("GP1 R1", "Toggle Turret Tracking");
         telemetry.update();
+        robot.follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
+
     }
 
     @Override
@@ -60,6 +63,7 @@ public class Teleop extends OpMode {
         robot.updateLimelightData();
         boolean hasTarget = robot.hasValidTarget();
         LLResult result = hasTarget ? robot.limelight.getLatestResult() : null;
+        Pose robotPose = robot.follower.getPose();
 
 
         // ========== UPDATE TURRET ==========
@@ -74,17 +78,17 @@ public class Teleop extends OpMode {
             telemetry.addData("Status", "NO TARGET");
         }
 
-        if(gamepad1.dpad_right){
+        if(gamepad1.dpadRightWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.intakeOn()
             );
         }
-        if(gamepad1.dpad_left){
+        if(gamepad1.dpadLeftWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.intakeOff()
             );
         }
-        if(gamepad1.dpad_up){
+        if(gamepad1.dpadUpWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     new ParallelGroup(
                             robot.transferOn(),
@@ -93,14 +97,14 @@ public class Teleop extends OpMode {
                             robot.doorOpen(),
                             new WaitUntil(()->{
                                 double current = robot.intake.getCurrent(CurrentUnit.MILLIAMPS);
-                                return current> (-1093.8*robot.battery.getVoltage()*robot.battery.getVoltage())+(27011*robot.battery.getVoltage())-160045;
+                                return current> 6600;
                             }).then(
                                     robot.intakeOff()
                             )
                     )
             );
         }
-        if (gamepad1.right_bumper){
+        if (gamepad1.rightBumperWasPressed()){
 
             CommandManager.INSTANCE.scheduleCommand(
                     new ParallelGroup(
@@ -110,12 +114,12 @@ public class Teleop extends OpMode {
             );
 
         }
-        if(gamepad1.left_bumper){
+        if(gamepad1.leftBumperWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.transferOff()
             );
         }
-        if(gamepad1.triangle){
+        if(gamepad1.triangleWasPressed()){
             Outtake = true;
 
         }
@@ -132,27 +136,33 @@ public class Teleop extends OpMode {
         }
 
 
-        if(gamepad1.circle){
+        if(gamepad1.circleWasPressed()){
             Outtake=false;
 //
         }
-        if(gamepad2.square){
+        if(gamepad2.squareWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.turretOn()
             );
         }
 
-        if(gamepad2.cross){
+        if(gamepad2.crossWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.turret()
             );
         }
-        if(gamepad2.circle){
+        if(gamepad2.circleWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.OuttakeOne()
             );
         }
-        if(gamepad1.dpad_down){
+        if(robotPose.getY()<72){
+            robot.UpdateTarget(0,160);
+        } else {
+            robot.UpdateTarget(0,148);
+        }
+
+        if(gamepad1.dpadDownWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.IntakeOut()
             );
@@ -161,7 +171,7 @@ public class Teleop extends OpMode {
 
 
 
-        if(gamepad1.right_stick_button) {
+        if(gamepad1.rightStickButtonWasPressed()) {
             CommandManager.INSTANCE.scheduleCommand(
                     robot.ButtKicker()
             );

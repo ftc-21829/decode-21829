@@ -50,16 +50,21 @@ public class AllMechCopy {
 
 
     // ========== TURRET PID CONSTANTS ==========
-    public static double turret_kP = 0.005, turret_kI = 0.0005, turret_kD = 0.004;
+    public static double turret_kP = 0.008, turret_kI = 0.0005, turret_kD = 0.004;
     public static double turret_tolerance = 1.0;
     public static double turret_max_power = 1;
     public static double turret_deadband = 0.25;
     private double integral = 0.0;
     private double lastError = 0.0;
+    // ========== SHOOTER VELOCITY CONTROL (FF + P) ==========
+    public static double shooter_kV = 0.0006;
+    public static double shooter_kS = 0.025;
+    public static double shooter_kP_vel = 0.0015;
+
 
     // ========== FIELD-RELATIVE TRACKING CONSTANTS ==========
     // Target position on field (in inches) - ADJUST FOR YOUR TARGET
-    public static double TARGET_X = 0; // X coordinate of basket/target
+    public static double TARGET_X = 4; // X coordinate of basket/target
     public static double TARGET_Y = 144; // Y coordinate of basket/target
 
     // Turret offset from robot center (radians) - adjust if turret isn't centered
@@ -82,6 +87,16 @@ public class AllMechCopy {
     private int lastLowPosPID = 0;
     private int lastHighPosPID = 0;
     private long lastTimePID = 0;
+    // ---- Hood shot compensation ----
+    public static double SHOT_VEL_DROP = 130;          // encoder ticks/sec, tune
+    public static double HOOD_COMP_STEP = 0.2;       // servo units per shot
+    public static double HOOD_COMP_MAX = 0.4;        // max hood drop
+    public static long SHOT_COOLDOWN_NS = 300_000_000; // 120 ms
+
+    private double hoodComp = 0.0;
+    private double lastShooterVel = 0.0;
+    private long lastShotTime = 0;
+
 
     private double shooterTargetVelocity = 0;
     private double targetHoodPosition = 0;
@@ -109,7 +124,7 @@ public class AllMechCopy {
     private boolean prevLogButton = false;
     public static double kps = 0.00515;
     public static double kis = 0;
-    public static double kds = 0.000045;
+    public static double kds = 0.000015;
 
     public AllMechCopy(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
@@ -124,7 +139,7 @@ public class AllMechCopy {
 
 
 
-        axon.setMaxPower(1);
+        axon.setMaxPower(0.85);
         colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
 
         outtakeLow = hardwareMap.get(DcMotorEx.class, "outtake Low");
@@ -139,7 +154,6 @@ public class AllMechCopy {
         outtakeHigh.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         outtakeLow.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeLow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
 
 
         intake = hardwareMap.get(DcMotorEx.class, "intake");
@@ -161,11 +175,16 @@ public class AllMechCopy {
 
     }
 
+
     private void initializeLimelight(HardwareMap hardwareMap) {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.setPollRateHz(100);
+        limelight.setPollRateHz(50);
         limelight.start();
         limelight.pipelineSwitch(0);
+    }
+    public void UpdateTarget(double x, double y){
+        TARGET_X = x;
+        TARGET_Y = y;
     }
 
     public void updateLimelightData() {
@@ -203,6 +222,10 @@ public class AllMechCopy {
         double CAMERA_ANGLE_DEG = 28.0;
         double totalAngleRad = Math.toRadians(CAMERA_ANGLE_DEG + ty);
         return (TARGET_HEIGHT_MM - CAMERA_HEIGHT_MM) / Math.tan(totalAngleRad);
+    }
+    private void onShotDetected() {
+        hoodComp = Math.min(hoodComp + HOOD_COMP_STEP, HOOD_COMP_MAX);
+        lastShotTime = System.nanoTime();
     }
 
     public void setTurretTrackingActive(boolean active) {
@@ -253,9 +276,13 @@ public class AllMechCopy {
         turretAngle = Math.atan2(Math.sin(turretAngle), Math.cos(turretAngle));
 
         // Convert to degrees for error (to match Limelight tx units)
-        return Math.toDegrees(turretAngle) *2.3793;
+        return Math.toDegrees(turretAngle) * 2.37931024483;
     }
 
+    private double distance(double x, double y){
+        return Math.pow((Math.pow((TARGET_X-x),2)+Math.pow((TARGET_Y-y),2)), 0.5);
+
+    }
     /**
      * Get the distance from robot to target using Pinpoint odometry.
      * Returns distance in inches.
@@ -280,7 +307,6 @@ public class AllMechCopy {
             axon.setRtp(true);
 
             double error = calculateFieldRelativeTurretError();
-            axon.update(); // <--- THIS LINE IS MISSING
 
 
             // Deadband
@@ -288,6 +314,8 @@ public class AllMechCopy {
 
             // Target rotation = error in degrees
             axon.setTargetRotation(error);
+            axon.update(); // <--- THIS LINE IS MISSING
+
             return;
         }
 
@@ -411,7 +439,7 @@ public class AllMechCopy {
                         intakeOn()
                 ),
 
-                new Delay(1),
+                new Delay(1.5),
                 ButtKicker(),
                 new ParallelGroup(
                         OuttakeOff(),
@@ -474,62 +502,94 @@ public class AllMechCopy {
 
     public double computeHoodPositionFromDistance(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
-        return -0.0000455193 * Math.pow(distanceMM, 2)
-                + 0.0198468 * distanceMM
-                - 1.24468;
+        return 1.75239* Math.pow(10,-8) * Math.pow(distanceMM, 4)
+                - 0.00000912987 * Math.pow(distanceMM,3)
+                + 0.00166471*Math.pow(distanceMM,2)
+                - 0.119039 * distanceMM
+                + 2.9607;
     }
 
     public double computeShooterTargetVelocityFromDistance(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
-        shooterTargetVelocity = 0.0426503 * Math.pow(distanceMM, 2)
-                - 8.80296 * distanceMM
-                + 1675.60075;
+        shooterTargetVelocity = -0.00000648716 * Math.pow(distanceMM, 4)
+                + 0.00252892 * Math.pow(distanceMM,3)
+                - 0.356135*Math.pow(distanceMM,2)
+                + 26.52963 * distanceMM
+                + 281.80402;
         return shooterTargetVelocity;
     }
 
-    public void updateShooterTargetFromLimelight() {
-        updateLimelightData();
-        LLResult r = currentResult;
-        if (r != null && r.isValid()) {
-            double dmm = getDistanceFromLimelight(r);
+    public void updateShooterTargetFromField() {
+        Pose robotPose = follower.getPose();
+
+        double dmm = distance(robotPose.getX(), robotPose.getY());
             if (dmm > 0) {
                 lastValidDistanceMM = dmm;
                 targetHoodPosition = computeHoodPositionFromDistance(dmm);
                 targetOuttakePower = computeShooterTargetVelocityFromDistance(dmm);
                 shooterEnabled = true;
             }
-        }
+
     }
+    private double shooterFeedforward(double targetVel) {
+        if (Math.abs(targetVel) < 1e-6) return 0.0;
+        return shooter_kS * Math.signum(targetVel) + shooter_kV * targetVel;
+    }
+
+    private double shooterFeedback(double targetVel, double currentVel) {
+        return shooter_kP_vel * (targetVel - currentVel);
+    }
+
+    private double clamp(double v, double min, double max) {
+        return Math.max(min, Math.min(max, v));
+    }
+
 
     /** Apply PID-controlled flywheel velocity and hood position */
     public void periodicShooterUpdateAndApplyPID() {
-        updateShooterTargetFromLimelight();
+        updateShooterTargetFromField();
         if (!shooterEnabled) return;
 
-        // PID for flywheel
         int lowPos = outtakeLow.getCurrentPosition();
         int highPos = outtakeHigh.getCurrentPosition();
         long now = System.nanoTime();
         double dt = (now - lastTimePID) / 1e9;
 
+        if (dt <= 0) return;
+
         double lowVel = (lowPos - lastLowPosPID) / dt;
         double highVel = (highPos - lastHighPosPID) / dt;
-        double actualVel = (lowVel + highVel) / 2.0;
+        double currentVel = (lowVel + highVel) / 2.0;
+        // ---- Shot detection (velocity drop) ----
+        long nowTime = System.nanoTime();
+        if (lastShooterVel - currentVel > SHOT_VEL_DROP &&
+                nowTime - lastShotTime > SHOT_COOLDOWN_NS) {
+
+            onShotDetected();
+        }
+        lastShooterVel = currentVel;
+
 
         lastLowPosPID = lowPos;
         lastHighPosPID = highPos;
         lastTimePID = now;
 
-        double error = shooterTargetVelocity - actualVel;
-        shooterIntegral += error * dt;
-        double derivative = (error - shooterLastError) / dt;
-        shooterLastError = error;
+        // ---- FEEDFORWARD + P CONTROL ----
+        double ff = shooterFeedforward(shooterTargetVelocity);
+        double fb = shooterFeedback(shooterTargetVelocity, currentVel);
+        // ---- Hood recovery when velocity stabilizes ----
+        double velError = shooterTargetVelocity - currentVel;
+        if (Math.abs(velError) < 150) {
+            hoodComp *= 0.85;
+            if (hoodComp < 0.06) hoodComp = 0;
+        }
 
-        double output = (shooter_kP * error) + (shooter_kI * shooterIntegral) + (shooter_kD * derivative);
-        output = Math.max(0, Math.min(output, 1));
+        double power = ff + fb;
+        power = clamp(power, 0.0, 0.9);
 
-        outtakeLow.setPower(output);
-        outtakeHigh.setPower(output);
-        hood.setPosition(targetHoodPosition);
+        outtakeLow.setPower(power);
+        outtakeHigh.setPower(power);
+        hood.setPosition(targetHoodPosition-hoodComp);
     }
+
 }

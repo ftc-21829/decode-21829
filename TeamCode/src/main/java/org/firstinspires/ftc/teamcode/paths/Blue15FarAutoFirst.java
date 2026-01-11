@@ -99,9 +99,10 @@ public class Blue15FarAutoFirst extends OpMode {
                         pathState = 2; // Done
                         actionTimer.resetTimer();
                     }
-                    break;
 
                 }
+                break;
+
 
 
             case 2:

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -57,6 +58,7 @@ public class VelocityDistanceLogger extends OpMode {
 
         hood.setPosition(hoodPos);
         r = new AllMechs(hardwareMap, gamepad1, gamepad2);
+        r.follower.setStartingPose(new Pose(72,72,Math.toRadians(90)));
 
         // Limelight (safe)
         try {
@@ -108,6 +110,11 @@ public class VelocityDistanceLogger extends OpMode {
         return kP * error;
     }
 
+    private double distance(double x, double y){
+        return Math.pow((Math.pow(x,2)+Math.pow((144-y),2)), 0.5);
+
+    }
+
     // ----------------------------------------------------------------------
     //  Clamp utility (from VelocityPID)
     // ----------------------------------------------------------------------
@@ -119,12 +126,13 @@ public class VelocityDistanceLogger extends OpMode {
     public void loop() {
 
         // ---- READ LIMELIGHT DISTANCE ----
+        r.follower.update();
         LLResult result = limelight != null ? limelight.getLatestResult() : null;
         double distance = getDistanceFromLimelight(result);
 
         // ---- VELOCITY INCREASE ----
         boolean inc = gamepad1.right_bumper;
-        if (inc && !lastInc) {
+        if (gamepad1.rightBumperWasPressed()) {
             targetVelocity += 50;
             gamepad1.rumble(200);
         }
@@ -132,7 +140,7 @@ public class VelocityDistanceLogger extends OpMode {
 
         // ---- VELOCITY DECREASE ----
         boolean dec = gamepad1.left_bumper;
-        if (dec && !lastDec) {
+        if (gamepad1.leftBumperWasPressed()) {
             targetVelocity -= 50;
             if (targetVelocity < 0) targetVelocity = 0;
             gamepad1.rumble(200);
@@ -164,32 +172,33 @@ public class VelocityDistanceLogger extends OpMode {
         outtakeHigh.setPower(power);
 
         // ---- HOOD ----
-        if (gamepad1.dpad_up) hoodPos += 0.01;
-        if (gamepad1.dpad_down) hoodPos -= 0.01;
+        if (gamepad1.dpadUpWasPressed()) hoodPos += 0.01;
+        if (gamepad1.dpadDownWasPressed()) hoodPos -= 0.01;
 
-        if(gamepad1.cross){
+        if(gamepad1.crossWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
-                    r.transferOn()
+                    r.transferfull()
             );
         }
-        if(gamepad1.square){
+        if(gamepad1.squareWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     r.transferOff()
             );
         }
-        if(gamepad1.triangle){
+        if(gamepad1.triangleWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     r.intakeOn()
             );
         }
-        if(gamepad1.circle){
+        if(gamepad1.circleWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     r.intakeOff()
             );
         }
 
-        hoodPos = clamp(hoodPos, 0, 1);
+        hoodPos = clamp(hoodPos, 0, 0.7);
         hood.setPosition(hoodPos);
+        Pose robotPose = r.follower.getPose();
 
         CommandManager.INSTANCE.run();
 
@@ -202,6 +211,10 @@ public class VelocityDistanceLogger extends OpMode {
         telemetry.addData("Hood Pos", hoodPos);
         telemetry.addData("Limelight Valid?", result != null && result.isValid());
         telemetry.addData("Distance (mm)", distance);
+        telemetry.addData("Robot X: ", robotPose.getX());
+        telemetry.addData("Robot Y: ", robotPose.getY());
+
+        telemetry.addData("Distance via odometry: ", distance(robotPose.getX(), robotPose.getY()));
 
         telemetry.update();
     }
