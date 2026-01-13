@@ -427,7 +427,13 @@ public class AllMechCopy {
     public Command doorClose() { return new InstantCommand(() -> door.setPosition(door_close_pos)); }
     public Command transferOn() { return new InstantCommand(() -> transfer.setPower(0.75)); }
     public Command transferOff() { return new InstantCommand(() -> transfer.setPower(0)); }
-    public Command transferfull() {return new InstantCommand(()-> transfer.setPower(1));}
+    public Command transferfull() {
+        return new InstantCommand(() -> transfer.setPower(1));
+
+    }
+
+    public Command transferReverse() {return new InstantCommand(()-> transfer.setPower(-0.5));}
+
     public Command transferSlow() { return new InstantCommand(() -> transfer.setPower(0.75)); }
 
     // ---- OUTTAKE now uses PID flywheel + hood ----
@@ -493,7 +499,7 @@ public class AllMechCopy {
                         new Delay(0.3),
                         new ParallelGroup(
                                 doorClose(),
-                                transferOff()
+                                transferReverse()
                         )
                 )
         );
@@ -511,11 +517,10 @@ public class AllMechCopy {
 
     public double computeShooterTargetVelocityFromDistance(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
-        shooterTargetVelocity = -0.00000648716 * Math.pow(distanceMM, 4)
-                + 0.00252892 * Math.pow(distanceMM,3)
-                - 0.356135*Math.pow(distanceMM,2)
-                + 26.52963 * distanceMM
-                + 281.80402;
+        shooterTargetVelocity = -0.000631777 * Math.pow(distanceMM, 3)
+                + 0.193224 * Math.pow(distanceMM,2)
+                - 12.94334* distanceMM
+                + 1274.75166;
         return shooterTargetVelocity;
     }
 

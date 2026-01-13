@@ -99,7 +99,11 @@ public class Teleop extends OpMode {
                                 double current = robot.intake.getCurrent(CurrentUnit.MILLIAMPS);
                                 return current> 6600;
                             }).then(
-                                    robot.intakeOff()
+                                    new ParallelGroup(
+                                            robot.intakeOff(),
+                                            robot.transferOff()
+                                    )
+
                             )
                     )
             );
