@@ -20,7 +20,7 @@ public class ServoPos extends OpMode {
     public static double motor_power = 1;
     public static double transfer_pos_up = 1;
     public static double transfer_pos_down = 0;
-    public static double butt_kicker_down = 0.88;
+    public static double butt_kicker_down = 0.84;
     public static double butt_kicker_up = 0.4675;
 
 

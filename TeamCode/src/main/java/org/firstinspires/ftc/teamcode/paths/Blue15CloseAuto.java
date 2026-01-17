@@ -22,6 +22,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.AllMechCopy;
 import org.firstinspires.ftc.teamcode.subsystems.AllMechs;
+import org.firstinspires.ftc.teamcode.subsystems.PoseStorage;
 import org.firstinspires.ftc.teamcode.testing.DriveTrainFloat;
 
 @Autonomous(name = "Blue15Close", group = "Autonomous")
@@ -32,7 +33,7 @@ public class Blue15CloseAuto extends OpMode {
     private int pathState;
     private AllMechCopy robot;
     private Timer actionTimer;
-    private PathChain shoot1Path, pickup1Path, shoot2Path;
+    private PathChain shoot1Path, pickup1Path, shoot2Path, pickup2Path,shoot3Path, pickup3Path, shoot4Path, leavePath;
     private boolean shooterActive = false; // ADD THIS
 
 
@@ -66,18 +67,76 @@ public class Blue15CloseAuto extends OpMode {
                 .addPath(
                         new BezierLine(
                                 new Pose(55.204, 84.095, Math.toRadians(180)),
-                                new Pose(22.57, 84.124, Math.toRadians(180))
+                                new Pose(25.37, 84.124, Math.toRadians(180))
                         )
                 )
                 .setConstantHeadingInterpolation(Math.toRadians(180))
-                .setVelocityConstraint(30)
+                .setVelocityConstraint(20)
                 .build();
         shoot2Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(22.57, 84.124, Math.toRadians(180)),
+                                new Pose(25.37, 84.124, Math.toRadians(180)),
                                 new Pose(55.204, 84.095, Math.toRadians(180))
+                        )
+                )
+                .setConstantHeadingInterpolation(Math.toRadians(180))
+                .build();
+        pickup2Path = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierCurve(
+                                new Pose(55.204, 84.095, Math.toRadians(180)),
+                                new Pose(60.5979, 56.84113),
+                                new Pose(22.359, 55.263, Math.toRadians(180))
+
+                        )
+                )
+                .setConstantHeadingInterpolation(Math.toRadians(180))
+                .setVelocityConstraint(15)
+                .build();
+        shoot3Path = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierCurve(
+                                new Pose(22.359, 55.263, Math.toRadians(180)),
+                                new Pose(43.5636, 62.6470),
+                                new Pose(55.204, 84.095, Math.toRadians(180))
+
+                        )
+                )
+                .setConstantHeadingInterpolation(Math.toRadians(180))
+                .build();
+        pickup3Path = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierCurve(
+                                new Pose(55.204, 84.095, Math.toRadians(180)),
+                                new Pose(65.0269, 30.0499),
+                                new Pose(20.096, 35.672, Math.toRadians(180))
+
+                        )
+                )
+                .setConstantHeadingInterpolation(Math.toRadians(180))
+                .setVelocityConstraint(20)
+                .build();
+        shoot4Path = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(
+                                new Pose(20.096, 35.672, Math.toRadians(180)),
+                                new Pose(55.204, 84.095, Math.toRadians(180))
+                        )
+                )
+                .setConstantHeadingInterpolation(Math.toRadians(180))
+                .build();
+        leavePath = follower
+                .pathBuilder()
+                .addPath(
+                        new BezierLine(
+                                new Pose(55.204, 84.095, Math.toRadians(180)),
+                                new Pose(45, 60.095, Math.toRadians(180))
                         )
                 )
                 .setConstantHeadingInterpolation(Math.toRadians(180))
@@ -89,6 +148,8 @@ public class Blue15CloseAuto extends OpMode {
     @Override
     public void loop() {
         follower.update();
+        PoseStorage.lastPose = follower.getPose();
+
 
         Pose robotPose = follower.getPose(); // Use follower, not robot.follower
         if(robotPose.getY() < 60){
@@ -115,7 +176,7 @@ public class Blue15CloseAuto extends OpMode {
         CommandManager.INSTANCE.run();
     }
 
-//    public void autonomousUpdate() {
+    //    public void autonomousUpdate() {
 //        switch (pathState) {
 //            case 0:
 //                // Start shooting sequence
@@ -189,92 +250,168 @@ public class Blue15CloseAuto extends OpMode {
 //                break;
 //        }
 //    }
-public void autonomousUpdate() {
-    switch (pathState) {
-        case 0:
-            // Start shooting sequence
-            actionTimer.resetTimer();
-            robot.setTurretTrackingActive(true);
-            shooterActive = true;
-
-            follower.followPath(shoot1Path, true);
-
-            pathState = 1;
-            break; // ✅
-
-        case 1:
-            // Wait for path to complete AND timer
-            if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.55) {
-                // Shoot the preload
-                CommandManager.INSTANCE.scheduleCommand(
-                        new SequentialGroup(robot.OuttakeOne()
-                                )
-                );
-
+    public void autonomousUpdate() {
+        switch (pathState) {
+            case 0:
+                // Start shooting sequence
                 actionTimer.resetTimer();
-                shooterActive = false;
-                pathState = 2;
-            }
-            break; // ✅
-
-        case 2:
-            // Wait for outtake to complete
-            if (actionTimer.getElapsedTimeSeconds() > 2.5) {
-                // Start pickup path
-                follower.followPath(pickup1Path, false);
-
-                // Schedule intake ONCE
-                CommandManager.INSTANCE.scheduleCommand(
-                        robot.intakeAndTransfer()
-                );
-
-                actionTimer.resetTimer();
-                pathState = 3;
+                robot.setTurretTrackingActive(true);
                 shooterActive = true;
-            }
-            break; // ✅
 
-        case 3:
-            // Wait for pickup path to complete AND intake to finish
-            if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
-                // Start shoot path
-                follower.followPath(shoot2Path, true);
+                follower.followPath(shoot1Path, false);
 
-                actionTimer.resetTimer();
-                pathState = 4;
-            }
-            break; // ✅
+                pathState = 1;
+                break; // ✅
 
-        case 4:
-            // Wait for path to complete AND shooter to spin up
-            if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
-                // Shoot the sample
-                CommandManager.INSTANCE.scheduleCommand(
-                        new SequentialGroup(
-                                robot.OuttakeOne()
+            case 1:
+                // Wait for path to complete AND timer
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.55) {
+                    // Shoot the preload
+                    CommandManager.INSTANCE.scheduleCommand(
+                            robot.OuttakeOne()
+                    );
 
+                    actionTimer.resetTimer();
+                    pathState = 2;
+                }
+                break; // ✅
 
-                        )
-                );
+            case 2:
+                // Wait for outtake to complete
+                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
+                    // Start pickup path
+                    follower.followPath(pickup1Path, false);
 
-                actionTimer.resetTimer();
-                shooterActive = false;
-                pathState = 5;
-            }
-            break; // ✅
+                    // Schedule intake ONCE
+                    CommandManager.INSTANCE.scheduleCommand(
+                            robot.intakeAndTransfer()
+                    );
 
-        case 5:
-            // Wait for final outtake to complete
-            if (actionTimer.getElapsedTimeSeconds() > 2.5) {
-                pathState = 6; // Done
-            }
-            break; // ✅
+                    actionTimer.resetTimer();
+                    pathState = 3;
+                }
+                break; // ✅
 
-        case 6:
-            // Autonomous complete - do nothing
-            break;
+            case 3:
+                // Wait for pickup path to complete AND intake to finish
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
+                    // Start shoot path
+                    follower.followPath(shoot2Path, false);
+
+                    actionTimer.resetTimer();
+                    pathState = 4;
+                }
+                break; // ✅
+
+            case 4:
+                // Wait for path to complete AND shooter to spin up
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
+                    // Shoot the sample
+                    CommandManager.INSTANCE.scheduleCommand(
+                                    robot.OuttakeOne()
+
+                    );
+
+                    actionTimer.resetTimer();
+                    pathState = 5;
+                }
+                break; // ✅
+            case 5:
+                // Wait for outtake to complete
+                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
+                    // Start pickup path
+                    follower.followPath(pickup2Path, false);
+
+                    // Schedule intake ONCE
+                    CommandManager.INSTANCE.scheduleCommand(
+                            robot.intakeAndTransfer()
+                    );
+
+                    actionTimer.resetTimer();
+                    pathState = 6;
+                }
+                break; // ✅
+            case 6:
+                // Wait for pickup path to complete AND intake to finish
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.25) {
+                    // Start shoot path
+                    follower.followPath(shoot3Path, true);
+
+                    actionTimer.resetTimer();
+                    pathState = 7;
+                }
+                break; // ✅
+
+            case 7:
+                // Wait for path to complete AND shooter to spin up
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
+                    // Shoot the sample
+                    CommandManager.INSTANCE.scheduleCommand(
+                            robot.OuttakeOne()
+
+                    );
+
+                    actionTimer.resetTimer();
+                    pathState = 8;
+                }
+                break; // ✅
+            case 8:
+                // Wait for outtake to complete
+                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
+                    // Start pickup path
+                    follower.followPath(pickup3Path, false);
+
+                    // Schedule intake ONCE
+                    CommandManager.INSTANCE.scheduleCommand(
+                            robot.intakeAndTransfer()
+                    );
+
+                    actionTimer.resetTimer();
+                    pathState = 9;
+                }
+                break; // ✅
+            case 9:
+                // Wait for pickup path to complete AND intake to finish
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
+                    // Start shoot path
+                    follower.followPath(shoot4Path, true);
+
+                    actionTimer.resetTimer();
+                    pathState = 10;
+                }
+                break; // ✅
+
+            case 10:
+                // Wait for path to complete AND shooter to spin up
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 3.15) {
+                    // Shoot the sample
+                    CommandManager.INSTANCE.scheduleCommand(
+                            robot.OuttakeOne()
+
+                    );
+
+                    actionTimer.resetTimer();
+                    pathState = 11;
+                }
+                break; // ✅
+            case 11:
+                if (actionTimer.getElapsedTimeSeconds() > 1.5) {
+                    follower.followPath(leavePath);
+                    pathState = 12; // Done
+                }
+                break; // ✅
+            case 12:
+                // Wait for final outtake to complete
+                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
+                    pathState = 12; // Done
+                }
+                break; // ✅
+
+            case 13:
+                // Autonomous complete - do nothing
+                break;
+        }
     }
-}
 }
 
 
