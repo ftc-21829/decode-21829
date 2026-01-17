@@ -135,7 +135,7 @@ public class TeleopTest extends OpMode {
 
         // ========== BUTT KICKER ==========
         if (gamepad1.right_stick_button) {
-            CommandManager.INSTANCE.scheduleCommand(robot.ButtKicker());
+            CommandManager.INSTANCE.scheduleCommand(robot.ButtKickerUp());
         }
 
         // Run command manager

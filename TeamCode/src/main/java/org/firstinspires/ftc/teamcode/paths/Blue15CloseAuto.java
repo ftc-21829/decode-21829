@@ -66,16 +66,17 @@ public class Blue15CloseAuto extends OpMode {
                 .addPath(
                         new BezierLine(
                                 new Pose(55.204, 84.095, Math.toRadians(180)),
-                                new Pose(21.37, 84.124, Math.toRadians(180))
+                                new Pose(22.57, 84.124, Math.toRadians(180))
                         )
                 )
                 .setConstantHeadingInterpolation(Math.toRadians(180))
+                .setVelocityConstraint(30)
                 .build();
         shoot2Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(21.37, 84.124, Math.toRadians(180)),
+                                new Pose(22.57, 84.124, Math.toRadians(180)),
                                 new Pose(55.204, 84.095, Math.toRadians(180))
                         )
                 )
@@ -196,7 +197,7 @@ public void autonomousUpdate() {
             robot.setTurretTrackingActive(true);
             shooterActive = true;
 
-            follower.followPath(shoot1Path, false);
+            follower.followPath(shoot1Path, true);
 
             pathState = 1;
             break; // ✅
@@ -206,7 +207,8 @@ public void autonomousUpdate() {
             if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.55) {
                 // Shoot the preload
                 CommandManager.INSTANCE.scheduleCommand(
-                        new SequentialGroup(robot.OuttakeOne())
+                        new SequentialGroup(robot.OuttakeOne()
+                                )
                 );
 
                 actionTimer.resetTimer();
@@ -228,6 +230,7 @@ public void autonomousUpdate() {
 
                 actionTimer.resetTimer();
                 pathState = 3;
+                shooterActive = true;
             }
             break; // ✅
 
@@ -235,9 +238,8 @@ public void autonomousUpdate() {
             // Wait for pickup path to complete AND intake to finish
             if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
                 // Start shoot path
-                follower.followPath(shoot2Path, false);
+                follower.followPath(shoot2Path, true);
 
-                shooterActive = true;
                 actionTimer.resetTimer();
                 pathState = 4;
             }
@@ -248,7 +250,11 @@ public void autonomousUpdate() {
             if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
                 // Shoot the sample
                 CommandManager.INSTANCE.scheduleCommand(
-                        robot.OuttakeOne()
+                        new SequentialGroup(
+                                robot.OuttakeOne()
+
+
+                        )
                 );
 
                 actionTimer.resetTimer();

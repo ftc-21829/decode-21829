@@ -111,6 +111,8 @@ public class AllMechCopy {
     public static double door_close_pos = 0.6;
     public static double butt_kicker_down = 0.88;
     public static double butt_kicker_up = 0.4675;
+    private boolean buttKickerFired = false;
+
 
     // ========== SHOOTER TUNING ==========
     private final double HOOD_A = 0.234833;
@@ -460,23 +462,31 @@ public class AllMechCopy {
                         intakeOn()
                 ),
 
-                new WaitUntil(()->{
+                new WaitUntil(() -> {
+
                     double distanceCmFront = 100;
                     double distanceCmBack = 100;
-                    if(colorSensorFront instanceof DistanceSensor){
-                        distanceCmFront = ((DistanceSensor) colorSensorFront).getDistance(DistanceUnit.CM);}
-                    if(colorSensorBack instanceof DistanceSensor){
-                        distanceCmBack = ((DistanceSensor) colorSensorBack).getDistance(DistanceUnit.CM);}
+                    if (colorSensorFront instanceof DistanceSensor) {
+                        distanceCmFront = ((DistanceSensor) colorSensorFront).getDistance(DistanceUnit.CM);
+                    }
+                    if (colorSensorBack instanceof DistanceSensor) {
+                        distanceCmBack = ((DistanceSensor) colorSensorBack).getDistance(DistanceUnit.CM);
+                    }
 
-                    return distanceCmFront > 6.5 && distanceCmBack > 6.5;
+                    return distanceCmFront > 7 && distanceCmBack > 7;
                 }).then(
                         new SequentialGroup(
-                                new Delay(0.3),
-                                ButtKicker()
+                                new Delay(0.5),
+                                new SequentialGroup(
+                                        ButtKickerUp(),
+                                        new Delay(0.3),
+                                        ButtKickerDown()
+                        )
 
                         )
 
-                        ),
+                ),
+
                 new ParallelGroup(
                         intakeOff(),
                         transferOff(),
@@ -508,11 +518,16 @@ public class AllMechCopy {
             setTurretTrackingActive(true);
         });
     }
-    public Command ButtKicker() {
+    public Command ButtKickerUp() {
         return new SequentialGroup(
-                new InstantCommand(() -> buttkicker.setPosition(butt_kicker_up)),
-                new Delay(0.5),
+                new InstantCommand(() -> buttkicker.setPosition(butt_kicker_up))
+
+        );
+    }
+    public Command ButtKickerDown() {
+        return new SequentialGroup(
                 new InstantCommand(() -> buttkicker.setPosition(butt_kicker_down))
+
         );
     }
 
@@ -548,10 +563,13 @@ public class AllMechCopy {
 
                     return distanceCmFront < 6.25 && distanceCmBack < 6.25;
                 }).then(
-                        new ParallelGroup(
-                                intakeOff(),
-                                transferOff()
+                        new SequentialGroup(
+                                new ParallelGroup(
+                                        intakeOff(),
+                                        transferOff()
+                                )
                         )
+
 
                 )
         );
@@ -572,11 +590,11 @@ public class AllMechCopy {
 
     public double computeShooterTargetVelocityFromDistance(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
-        shooterTargetVelocity = -0.0000272952 * Math.pow(distanceMM, 4)
-                + 0.0113041 * Math.pow(distanceMM,3)
-                - 1.65601 * Math.pow(distanceMM, 2)
-                + 107.79703 * distanceMM
-                - 1542.98727;
+        shooterTargetVelocity = -0.0000213794 * Math.pow(distanceMM, 4)
+                + 0.00838221 * Math.pow(distanceMM,3)
+                - 1.14285 * Math.pow(distanceMM, 2)
+                + 70.67761 * distanceMM
+                - 605.33209;
         return shooterTargetVelocity;
     }
 

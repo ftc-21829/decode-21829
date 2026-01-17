@@ -11,7 +11,9 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.rowanmcalpin.nextftc.core.command.Command;
 import com.rowanmcalpin.nextftc.core.command.CommandManager;
 import com.rowanmcalpin.nextftc.core.command.groups.ParallelGroup;
+import com.rowanmcalpin.nextftc.core.command.groups.SequentialGroup;
 import com.rowanmcalpin.nextftc.core.command.utility.InstantCommand;
+import com.rowanmcalpin.nextftc.core.command.utility.delays.Delay;
 import com.rowanmcalpin.nextftc.core.command.utility.delays.WaitUntil;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
@@ -29,6 +31,9 @@ public class Teleop extends OpMode {
     private int lastHighPos = 0;
     private long lastTime = 0;
     private double currentVelocity = 0.0;
+    private double manualXOffset = 0.0;
+    private double manualYOffset = 0.0;
+    public static double ADJUSTMENT_STEP = 0.5;
 
     @Override
     public void init() {
@@ -95,6 +100,18 @@ public class Teleop extends OpMode {
             telemetry.addData("Status", "NO TARGET");
         }
 
+//        if(gamepad1.dpadRightWasPressed()){
+//            manualYOffset += ADJUSTMENT_STEP;
+//        }
+//        if(gamepad1.dpadLeftWasPressed()){
+//            manualYOffset -= ADJUSTMENT_STEP;
+//        }
+//        if(gamepad1.rightBumperWasPressed()){
+//            manualXOffset += ADJUSTMENT_STEP;
+//        }
+//        if(gamepad1.leftBumperWasPressed()){
+//            manualXOffset -= ADJUSTMENT_STEP;
+//        }
         if(gamepad1.dpadRightWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.intakeOn()
@@ -127,8 +144,8 @@ public class Teleop extends OpMode {
         }
         if(gamepad1.triangleWasPressed()){
             Outtake = true;
-
         }
+
 
 
         if (Outtake){
@@ -163,11 +180,10 @@ public class Teleop extends OpMode {
         }
 
         if(robotPose.getY()<60){
-            robot.UpdateTarget(5.5,152);
+            robot.UpdateTarget(5.5 + manualXOffset,152 + manualYOffset);
         } else {
-            robot.UpdateTarget(3.5,148); // 0,148
+            robot.UpdateTarget(3.5 + manualXOffset,148 + manualYOffset); // 0,148
         }
-
 
 
         if(gamepad1.dpadDownWasPressed()){
@@ -181,7 +197,12 @@ public class Teleop extends OpMode {
 
         if(gamepad1.leftStickButtonWasPressed()) {
             CommandManager.INSTANCE.scheduleCommand(
-                    robot.ButtKicker()
+                    new SequentialGroup(
+                            robot.ButtKickerUp(),
+                            new Delay(0.5),
+                            robot.ButtKickerDown()
+
+                    )
             );
         }
 
