@@ -113,7 +113,7 @@ public class Blue15CloseAuto extends OpMode {
         autonomousUpdate();
         CommandManager.INSTANCE.run();
     }
-//d
+
 //    public void autonomousUpdate() {
 //        switch (pathState) {
 //            case 0:
@@ -211,51 +211,51 @@ public void autonomousUpdate() {
 
                 actionTimer.resetTimer();
                 shooterActive = false;
-                pathState = 5;
+                pathState = 2;
             }
             break; // ✅
 
-//        case 2:
-//            // Wait for outtake to complete
-//            if (actionTimer.getElapsedTimeSeconds() > 2.5) {
-//                // Start pickup path
-//                follower.followPath(pickup1Path, false);
-//
-//                // Schedule intake ONCE
-//                CommandManager.INSTANCE.scheduleCommand(
-//                        robot.intakeAndTransfer()
-//                );
-//
-//                actionTimer.resetTimer();
-//                pathState = 3;
-//            }
-//            break; // ✅
-//
-//        case 3:
-//            // Wait for pickup path to complete AND intake to finish
-//            if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
-//                // Start shoot path
-//                follower.followPath(shoot2Path, false);
-//
-//                shooterActive = true;
-//                actionTimer.resetTimer();
-//                pathState = 4;
-//            }
-//            break; // ✅
-//
-//        case 4:
-//            // Wait for path to complete AND shooter to spin up
-//            if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
-//                // Shoot the sample
-//                CommandManager.INSTANCE.scheduleCommand(
-//                        robot.OuttakeOne()
-//                );
-//
-//                actionTimer.resetTimer();
-//                shooterActive = false;
-//                pathState = 5;
-//            }
-//            break; // ✅
+        case 2:
+            // Wait for outtake to complete
+            if (actionTimer.getElapsedTimeSeconds() > 2.5) {
+                // Start pickup path
+                follower.followPath(pickup1Path, false);
+
+                // Schedule intake ONCE
+                CommandManager.INSTANCE.scheduleCommand(
+                        robot.intakeAndTransfer()
+                );
+
+                actionTimer.resetTimer();
+                pathState = 3;
+            }
+            break; // ✅
+
+        case 3:
+            // Wait for pickup path to complete AND intake to finish
+            if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
+                // Start shoot path
+                follower.followPath(shoot2Path, false);
+
+                shooterActive = true;
+                actionTimer.resetTimer();
+                pathState = 4;
+            }
+            break; // ✅
+
+        case 4:
+            // Wait for path to complete AND shooter to spin up
+            if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
+                // Shoot the sample
+                CommandManager.INSTANCE.scheduleCommand(
+                        robot.OuttakeOne()
+                );
+
+                actionTimer.resetTimer();
+                shooterActive = false;
+                pathState = 5;
+            }
+            break; // ✅
 
         case 5:
             // Wait for final outtake to complete

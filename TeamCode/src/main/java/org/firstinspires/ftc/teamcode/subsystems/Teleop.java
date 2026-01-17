@@ -39,6 +39,7 @@ public class Teleop extends OpMode {
         robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
 
         DriveTrainFloat.setToFloatMode(hardwareMap);
+        robot.follower.setStartingPose(PoseStorage.lastPose);
 
         currentGamepad1 = new Gamepad();
         currentGamepad2 = new Gamepad();
@@ -49,7 +50,6 @@ public class Teleop extends OpMode {
         telemetry.addLine("=== CONTROLS ===");
         telemetry.addData("GP1 R1", "Toggle Turret Tracking");
         telemetry.update();
-        robot.follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
 
         lastLowPos = robot.outtakeLow.getCurrentPosition();
         lastHighPos = robot.outtakeHigh.getCurrentPosition();
@@ -132,15 +132,20 @@ public class Teleop extends OpMode {
             Outtake = true;
 
         }
+        if(gamepad2.triangleWasPressed()){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.relocalize()
+            );
+        }
 
 
         if (Outtake){
-        robot.periodicShooterUpdateAndApplyPID();
+            robot.periodicShooterUpdateAndApplyPID();
 
         }
         if (!Outtake){
             CommandManager.INSTANCE.scheduleCommand(
-                   robot.OuttakeOff()
+                    robot.OuttakeOff()
             );
         }
 
@@ -213,6 +218,11 @@ public class Teleop extends OpMode {
         telemetry.addData("Back Distance", "%.2f cm", distanceCmBack);
         telemetry.addData("Front Ball Detected", distanceCmFront < 6.5 ? "YES ✓" : "NO");
         telemetry.addData("Back Ball Detected", distanceCmBack < 6.5 ? "YES ✓" : "NO");
+        telemetry.addData("followerXPose: ", robotPose.getX());
+        telemetry.addData("followerYPose: ", robotPose.getY());
+        telemetry.addData("followerHeading: ", robotPose.getHeading());
+
+
         telemetry.update();
     }
 
