@@ -532,6 +532,7 @@ public class AllMechCopy {
 
         );
     }
+    //d
     public Command intakeAndTransfer() {
         return new ParallelGroup(
                 transferOn(),

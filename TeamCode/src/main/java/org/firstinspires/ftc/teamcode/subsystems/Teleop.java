@@ -29,6 +29,9 @@ public class Teleop extends OpMode {
     private int lastHighPos = 0;
     private long lastTime = 0;
     private double currentVelocity = 0.0;
+    private double manualXOffset = 0.0;
+    private double manualYOffset = 0.0;
+    public static double ADJUSTMENT_STEP = 0.5;
 
     @Override
     public void init() {
