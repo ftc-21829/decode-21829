@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.pedropathing.follower.Follower;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -8,6 +9,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.rowanmcalpin.nextftc.core.command.CommandManager;
+
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @TeleOp(name = "Flywheel PID Tester (Distance + PID)", group = "Testing")
 public class FlywheelDistanceLogger extends OpMode {
@@ -53,6 +56,7 @@ public class FlywheelDistanceLogger extends OpMode {
             return;
         }
 
+        Follower follower = Constants.createFollower(hardwareMap);
 
         outtakeHigh.setDirection(DcMotor.Direction.REVERSE);
 
@@ -60,7 +64,7 @@ public class FlywheelDistanceLogger extends OpMode {
         outtakeHigh.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         hood.setPosition(hoodPos);
-        r = new AllMechCopy(hardwareMap, gamepad1, gamepad2);
+        r = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
 
         // Limelight (safe)
         try {

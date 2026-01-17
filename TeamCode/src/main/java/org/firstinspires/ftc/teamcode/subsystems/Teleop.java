@@ -1,10 +1,12 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.rowanmcalpin.nextftc.core.command.Command;
 import com.rowanmcalpin.nextftc.core.command.CommandManager;
@@ -13,6 +15,9 @@ import com.rowanmcalpin.nextftc.core.command.utility.InstantCommand;
 import com.rowanmcalpin.nextftc.core.command.utility.delays.WaitUntil;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.testing.DriveTrainFloat;
 
 @TeleOp(name = "Turret CRServo TeleOp - Blue")
 public class Teleop extends OpMode {
@@ -20,10 +25,17 @@ public class Teleop extends OpMode {
     boolean Outtake;
     Gamepad currentGamepad1, previousGamepad1, currentGamepad2, previousGamepad2;
     private final FtcDashboard dash = FtcDashboard.getInstance();
+    private int lastLowPos = 0;
+    private int lastHighPos = 0;
+    private long lastTime = 0;
+    private double currentVelocity = 0.0;
 
     @Override
     public void init() {
-        robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2);
+        Follower follower = Constants.createFollower(hardwareMap);
+        robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
+
+        DriveTrainFloat.setToFloatMode(hardwareMap);
 
         currentGamepad1 = new Gamepad();
         currentGamepad2 = new Gamepad();
@@ -36,6 +48,9 @@ public class Teleop extends OpMode {
         telemetry.update();
         robot.follower.setStartingPose(new Pose(72, 72, Math.toRadians(90)));
 
+        lastLowPos = robot.outtakeLow.getCurrentPosition();
+        lastHighPos = robot.outtakeHigh.getCurrentPosition();
+        lastTime = System.nanoTime();
     }
 
     @Override
@@ -52,6 +67,8 @@ public class Teleop extends OpMode {
         currentGamepad1.copy(gamepad1);
         currentGamepad2.copy(gamepad2);
         robot.follower.update();
+
+        calculateShooterVelocity();
 
         double y = -gamepad2.left_stick_y;
         double x = -gamepad2.left_stick_x * 1.1;
@@ -90,22 +107,7 @@ public class Teleop extends OpMode {
         }
         if(gamepad1.dpadUpWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
-                    new ParallelGroup(
-                            robot.transferOn(),
-                            robot.intakeOn(),
-                            robot.transferCheck(),
-                            robot.doorOpen(),
-                            new WaitUntil(()->{
-                                double current = robot.intake.getCurrent(CurrentUnit.MILLIAMPS);
-                                return current> 6600;
-                            }).then(
-                                    new ParallelGroup(
-                                            robot.intakeOff(),
-                                            robot.transferOff()
-                                    )
-
-                            )
-                    )
+                    robot.intakeAndTransfer()
             );
         }
         if (gamepad1.rightBumperWasPressed()){
@@ -139,7 +141,6 @@ public class Teleop extends OpMode {
             );
         }
 
-
         if(gamepad1.circleWasPressed()){
             Outtake=false;
 //
@@ -160,11 +161,14 @@ public class Teleop extends OpMode {
                     robot.OuttakeOne()
             );
         }
-        if(robotPose.getY()<72){
-            robot.UpdateTarget(0,160);
+
+        if(robotPose.getY()<60){
+            robot.UpdateTarget(5.5,152);
         } else {
-            robot.UpdateTarget(0,148);
+            robot.UpdateTarget(3.5,148); // 0,148
         }
+
+
 
         if(gamepad1.dpadDownWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
@@ -175,7 +179,7 @@ public class Teleop extends OpMode {
 
 
 
-        if(gamepad1.rightStickButtonWasPressed()) {
+        if(gamepad1.leftStickButtonWasPressed()) {
             CommandManager.INSTANCE.scheduleCommand(
                     robot.ButtKicker()
             );
@@ -183,8 +187,12 @@ public class Teleop extends OpMode {
 
 
         CommandManager.INSTANCE.run();
-
-
+        double distanceCmFront = 100;
+        double distanceCmBack = 100;
+        if(robot.colorSensorFront instanceof DistanceSensor){
+            distanceCmFront = ((DistanceSensor) robot.colorSensorFront).getDistance(DistanceUnit.CM);}
+        if(robot.colorSensorBack instanceof DistanceSensor){
+            distanceCmBack = ((DistanceSensor) robot.colorSensorBack).getDistance(DistanceUnit.CM);}
 
 
         telemetry.addLine();
@@ -194,8 +202,14 @@ public class Teleop extends OpMode {
                 robot.isTurretTrackingActive() ? "AUTO (R1 to disable)" : "READY (R1 to enable)");
         telemetry.addData("Current", robot.intake.getCurrent(CurrentUnit.MILLIAMPS));
         telemetry.addData("Field Active: ", robot.FieldRelativeTrue());
-
-
+        telemetry.addData("Target Velocity", "%.1f ticks/sec", robot.shooterTargetVelocity);
+        telemetry.addData("Current Velocity", "%.1f ticks/sec", currentVelocity);
+        telemetry.addData("Velocity Error", "%.1f ticks/sec",
+                robot.shooterTargetVelocity - currentVelocity);
+        telemetry.addData("Front Distance", "%.2f cm", distanceCmFront);
+        telemetry.addData("Back Distance", "%.2f cm", distanceCmBack);
+        telemetry.addData("Front Ball Detected", distanceCmFront < 6.5 ? "YES ✓" : "NO");
+        telemetry.addData("Back Ball Detected", distanceCmBack < 6.5 ? "YES ✓" : "NO");
         telemetry.update();
     }
 
@@ -204,6 +218,24 @@ public class Teleop extends OpMode {
     public void stop() {
         robot.setTurretTrackingActive(false);
         super.stop();
+    }
+
+    private void calculateShooterVelocity() {
+        int lowPos = robot.outtakeLow.getCurrentPosition();
+        int highPos = robot.outtakeHigh.getCurrentPosition();
+        long now = System.nanoTime();
+
+        double dt = (now - lastTime) / 1e9;
+
+        if (dt > 0) {
+            double lowVel = (lowPos - lastLowPos) / dt;
+            double highVel = (highPos - lastHighPos) / dt;
+            currentVelocity = (lowVel + highVel) / 2.0;
+        }
+
+        lastLowPos = lowPos;
+        lastHighPos = highPos;
+        lastTime = now;
     }
 
 

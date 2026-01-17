@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -8,6 +9,9 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.rowanmcalpin.nextftc.core.command.CommandManager;
 import com.rowanmcalpin.nextftc.core.command.groups.ParallelGroup;
+
+import org.firstinspires.ftc.robotcore.external.Const;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @TeleOp(name = "TeleopTest-newTracking")
 public class TeleopTest extends OpMode {
@@ -18,7 +22,8 @@ public class TeleopTest extends OpMode {
 
     @Override
     public void init() {
-        robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2);
+        Follower follower = Constants.createFollower(hardwareMap);
+        robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
 
         currentGamepad1 = new Gamepad();
         currentGamepad2 = new Gamepad();

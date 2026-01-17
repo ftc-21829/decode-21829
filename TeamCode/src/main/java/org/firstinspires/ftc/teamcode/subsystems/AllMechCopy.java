@@ -4,11 +4,14 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -28,11 +31,13 @@ import com.rowanmcalpin.nextftc.core.command.utility.delays.WaitUntil;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.testing.RTPAxon;
 
+import java.io.SequenceInputStream;
+
 @Config
 public class AllMechCopy {
     public DcMotorEx intake, outtakeLow, outtakeHigh, transfer;
     public Follower follower;
-    public ColorSensor colorSensor;
+    public ColorSensor colorSensor, colorSensorFront, colorSensorBack;
 
     public Servo door, hood, buttkicker;
     public CRServo turretServo;
@@ -47,13 +52,13 @@ public class AllMechCopy {
     private RTPAxon axon;
     VoltageSensor battery;
 
-
+    com.pedropathing.util.Timer actionTimer;
 
     // ========== TURRET PID CONSTANTS ==========
     public static double turret_kP = 0.008, turret_kI = 0.0005, turret_kD = 0.004;
     public static double turret_tolerance = 1.0;
     public static double turret_max_power = 1;
-    public static double turret_deadband = 0.25;
+    public static double turret_deadband = 0.1;
     private double integral = 0.0;
     private double lastError = 0.0;
     // ========== SHOOTER VELOCITY CONTROL (FF + P) ==========
@@ -98,7 +103,7 @@ public class AllMechCopy {
     private long lastShotTime = 0;
 
 
-    private double shooterTargetVelocity = 0;
+    public double shooterTargetVelocity = 0;
     private double targetHoodPosition = 0;
 
     // ========== SERVO POSITIONS ==========
@@ -122,16 +127,15 @@ public class AllMechCopy {
     private boolean prevDpadUp = false;
     private boolean prevDpadDown = false;
     private boolean prevLogButton = false;
-    public static double kps = 0.00515;
-    public static double kis = 0;
-    public static double kds = 0.000015;
+    public static double kps = 0.0053; //0.00515
+    public static double kis = 0.0001; //0
+    public static double kds = 0.0000007; //0.0000005
 
-    public AllMechCopy(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
+    public AllMechCopy(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2, Follower follower) {
         this.gamepad1 = gamepad1;
         this.gamepad2 = gamepad2;
         this.telemetry = new MultipleTelemetry();
-
-        follower = Constants.createFollower(hardwareMap);
+        this.follower = follower;
         AnalogInput encoder = hardwareMap.get(AnalogInput.class, "turretAnalog");
         turretServo = hardwareMap.get(CRServo.class, "turret");
 
@@ -141,6 +145,8 @@ public class AllMechCopy {
 
         axon.setMaxPower(0.85);
         colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
+        colorSensorFront = hardwareMap.get(ColorSensor.class, "colorSensorFront");
+        colorSensorBack = hardwareMap.get(ColorSensor.class, "colorSensorBack");
 
         outtakeLow = hardwareMap.get(DcMotorEx.class, "outtake Low");
         outtakeHigh = hardwareMap.get(DcMotorEx.class, "outtake High");
@@ -155,9 +161,10 @@ public class AllMechCopy {
         outtakeLow.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outtakeLow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-
+        actionTimer = new Timer();
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
+
 
 
         door = hardwareMap.get(Servo.class, "door");
@@ -432,7 +439,15 @@ public class AllMechCopy {
 
     }
 
-    public Command transferReverse() {return new InstantCommand(()-> transfer.setPower(-0.5));}
+    public Command transferReverse() {
+
+        return new SequentialGroup(
+                new InstantCommand(() -> transfer.setPower(-0.21)),
+                new Delay(1),
+                transferOff()
+        );
+
+    }
 
     public Command transferSlow() { return new InstantCommand(() -> transfer.setPower(0.75)); }
 
@@ -445,10 +460,24 @@ public class AllMechCopy {
                         intakeOn()
                 ),
 
-                new Delay(1.5),
-                ButtKicker(),
+                new WaitUntil(()->{
+                    double distanceCmFront = 100;
+                    double distanceCmBack = 100;
+                    if(colorSensorFront instanceof DistanceSensor){
+                        distanceCmFront = ((DistanceSensor) colorSensorFront).getDistance(DistanceUnit.CM);}
+                    if(colorSensorBack instanceof DistanceSensor){
+                        distanceCmBack = ((DistanceSensor) colorSensorBack).getDistance(DistanceUnit.CM);}
+
+                    return distanceCmFront > 6.5 && distanceCmBack > 6.5;
+                }).then(
+                        new SequentialGroup(
+                                new Delay(0.3),
+                                ButtKicker()
+
+                        )
+
+                        ),
                 new ParallelGroup(
-                        OuttakeOff(),
                         intakeOff(),
                         transferOff(),
                         doorClose()
@@ -495,15 +524,41 @@ public class AllMechCopy {
             }
             return distanceCm < 1.0;
         }).then(
-                new SequentialGroup(
-                        new Delay(0.3),
+
                         new ParallelGroup(
                                 doorClose(),
                                 transferReverse()
                         )
+
+        );
+    }
+    public Command intakeAndTransfer() {
+        return new ParallelGroup(
+                transferOn(),
+                intakeOn(),
+                transferCheck(),
+                doorOpen(),
+                new WaitUntil(()->{
+                    double distanceCmFront = 100;
+                    double distanceCmBack = 100;
+                    if(colorSensorFront instanceof DistanceSensor){
+                        distanceCmFront = ((DistanceSensor) colorSensorFront).getDistance(DistanceUnit.CM);}
+                    if(colorSensorBack instanceof DistanceSensor){
+                        distanceCmBack = ((DistanceSensor) colorSensorBack).getDistance(DistanceUnit.CM);}
+
+                    return distanceCmFront < 6.25 && distanceCmBack < 6.25;
+                }).then(
+                        new ParallelGroup(
+                                intakeOff(),
+                                transferOff()
+                        )
+
                 )
         );
     }
+
+
+
     // ========== SHOOTER HELPERS ==========
 
     public double computeHoodPositionFromDistance(double distanceMM) {
@@ -517,10 +572,11 @@ public class AllMechCopy {
 
     public double computeShooterTargetVelocityFromDistance(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
-        shooterTargetVelocity = -0.000631777 * Math.pow(distanceMM, 3)
-                + 0.193224 * Math.pow(distanceMM,2)
-                - 12.94334* distanceMM
-                + 1274.75166;
+        shooterTargetVelocity = -0.0000272952 * Math.pow(distanceMM, 4)
+                + 0.0113041 * Math.pow(distanceMM,3)
+                - 1.65601 * Math.pow(distanceMM, 2)
+                + 107.79703 * distanceMM
+                - 1542.98727;
         return shooterTargetVelocity;
     }
 
@@ -594,7 +650,7 @@ public class AllMechCopy {
 
         outtakeLow.setPower(power);
         outtakeHigh.setPower(power);
-        hood.setPosition(targetHoodPosition-hoodComp);
+        hood.setPosition(targetHoodPosition);
     }
 
 }

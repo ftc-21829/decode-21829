@@ -18,15 +18,16 @@ import com.rowanmcalpin.nextftc.core.command.utility.InstantCommand;
 import com.rowanmcalpin.nextftc.core.command.utility.delays.Delay;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.subsystems.AllMechCopy;
 import org.firstinspires.ftc.teamcode.subsystems.AllMechs;
 
-@Autonomous(name = "Blue15Fartestthing", group = "Autonomous")
+@Autonomous(name = "Blue15FarAutoActual", group = "Autonomous")
 @Configurable
 public class Blue15FarAutoFirst extends OpMode {
     private TelemetryManager panelsTelemetry;
     public Follower follower;
     private int pathState;
-    private AllMechs robot;
+    private AllMechCopy robot;
     private Timer actionTimer;
     private PathChain leavePath;
 
@@ -38,7 +39,7 @@ public class Blue15FarAutoFirst extends OpMode {
         pathState = 0;
 
 
-        robot = new AllMechs(hardwareMap, gamepad1, gamepad2);
+        robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2,follower);
         actionTimer = new Timer();
 
         // Build the leave path
@@ -62,12 +63,18 @@ public class Blue15FarAutoFirst extends OpMode {
         follower.update();
         autonomousUpdate();
         CommandManager.INSTANCE.run();
+        Pose robotPose = robot.follower.getPose();
+        if(robotPose.getY()<60){
+            robot.UpdateTarget(6,152);
+        } else {
+            robot.UpdateTarget(3,150); // 0,148
+        }
 
         // Telemetry
         panelsTelemetry.debug("Path State", pathState);
-        panelsTelemetry.debug("X", follower.getPose().getX());
-        panelsTelemetry.debug("Y", follower.getPose().getY());
-        panelsTelemetry.debug("Heading", follower.getPose().getHeading());
+        panelsTelemetry.debug("X", robot.follower.getPose().getX());
+        panelsTelemetry.debug("Y", robot.follower.getPose().getY());
+        panelsTelemetry.debug("Heading", robot.follower.getPose().getHeading());
         panelsTelemetry.update(telemetry);
     }
 
@@ -78,10 +85,9 @@ public class Blue15FarAutoFirst extends OpMode {
                 actionTimer.resetTimer();
                 CommandManager.INSTANCE.scheduleCommand(
                         new ParallelGroup(
-                                robot.OuttakeOn())
-
-
-                );
+                                robot.OuttakeOn(),
+                                robot.turretOn())
+                        );
 
                 pathState = 1;
                 break;
@@ -90,24 +96,20 @@ public class Blue15FarAutoFirst extends OpMode {
                 // Wait for shooting to complete (adjust time as needed)
                 if (actionTimer.getElapsedTimeSeconds() > 3.25) {
                     // Kick the sample out
-
                     CommandManager.INSTANCE.scheduleCommand(
-                            new SequentialGroup(
                                     robot.OuttakeOne()
-                            ));
+                            );
                     if (!follower.isBusy()) {
                         pathState = 2; // Done
                         actionTimer.resetTimer();
-                    }
 
+                    }
                 }
                 break;
 
 
-
             case 2:
                 // Wait for butt kicker to complete
-                if (actionTimer.getElapsedTimeSeconds() > 2) {
 //
 //                    // Turn off mechanisms
 //                    CommandManager.INSTANCE.scheduleCommand(
@@ -128,14 +130,13 @@ public class Blue15FarAutoFirst extends OpMode {
 //                    CommandManager.INSTANCE.scheduleCommand(
 //                            new ParallelGroup(
 //                                    robot.transferOff(),
-//                                    robot.OuttakeOff(),
+//                                       robot.OuttakeOff(),
 //                                    robot.doorClose(),
 //                                    robot.intakeOff()
 //                            ));
 //                     Start leaving
-                    follower.followPath(leavePath);
-                    pathState = 3;
-                }
+//                    follower.followPath(leavePath);
+                pathState = 3;
                 break;
             case 3:
                 // Wait for path to complete
