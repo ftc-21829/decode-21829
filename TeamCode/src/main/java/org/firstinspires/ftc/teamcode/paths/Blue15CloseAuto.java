@@ -113,7 +113,7 @@ public class Blue15CloseAuto extends OpMode {
         autonomousUpdate();
         CommandManager.INSTANCE.run();
     }
-
+//d
 //    public void autonomousUpdate() {
 //        switch (pathState) {
 //            case 0:

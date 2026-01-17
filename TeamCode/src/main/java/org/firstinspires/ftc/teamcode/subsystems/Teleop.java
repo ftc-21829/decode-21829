@@ -70,7 +70,7 @@ public class Teleop extends OpMode {
         currentGamepad1.copy(gamepad1);
         currentGamepad2.copy(gamepad2);
         robot.follower.update();
-
+//s
         calculateShooterVelocity();
 
         double y = -gamepad2.left_stick_y;
