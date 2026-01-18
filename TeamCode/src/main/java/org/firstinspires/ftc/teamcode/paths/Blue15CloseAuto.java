@@ -23,6 +23,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.AllMechCopy;
 import org.firstinspires.ftc.teamcode.subsystems.AllMechs;
 import org.firstinspires.ftc.teamcode.subsystems.PoseStorage;
+import org.firstinspires.ftc.teamcode.subsystems.TurretPoseStorage;
 import org.firstinspires.ftc.teamcode.testing.DriveTrainFloat;
 
 @Autonomous(name = "Blue15Close", group = "Autonomous")
@@ -33,7 +34,7 @@ public class Blue15CloseAuto extends OpMode {
     private int pathState;
     private AllMechCopy robot;
     private Timer actionTimer;
-    private PathChain shoot1Path, pickup1Path, shoot2Path, pickup2Path,shoot3Path, pickup3Path, shoot4Path, leavePath;
+    private PathChain shoot1Path, pickup1Path, shoot2Path, pickup2Path, shoot3Path, pickup3Path, shoot4Path, leavePath;
     private boolean shooterActive = false; // ADD THIS
 
 
@@ -44,7 +45,9 @@ public class Blue15CloseAuto extends OpMode {
         follower.setStartingPose(new Pose(20.67, 122.855, Math.toRadians(144)));
         pathState = 0;
         DriveTrainFloat.setToFloatMode(hardwareMap);
-
+        PoseStorage.x = 20.67;
+        PoseStorage.y = 122.855;
+        PoseStorage.heading = Math.toRadians(144);
 
 
         robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
@@ -56,7 +59,7 @@ public class Blue15CloseAuto extends OpMode {
                 .addPath(
                         new BezierLine(
                                 new Pose(20.67, 122.855, Math.toRadians(144)),
-                                new Pose(55.204, 84.095, Math.toRadians(180))
+                                new Pose(53.704, 85.595, Math.toRadians(180))
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(180))
@@ -66,81 +69,72 @@ public class Blue15CloseAuto extends OpMode {
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(55.204, 84.095, Math.toRadians(180)),
+                                new Pose(53.704, 85.595, Math.toRadians(180)),
                                 new Pose(25.37, 84.124, Math.toRadians(180))
                         )
                 )
                 .setConstantHeadingInterpolation(Math.toRadians(180))
-                .setVelocityConstraint(20)
+                .setVelocityConstraint(10)
                 .build();
         shoot2Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
                                 new Pose(25.37, 84.124, Math.toRadians(180)),
-                                new Pose(55.204, 84.095, Math.toRadians(180))
+                                new Pose(53.704, 85.595, Math.toRadians(144))
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(144))
                 .build();
         pickup2Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(55.204, 84.095, Math.toRadians(180)),
+                                new Pose(53.704, 85.595, Math.toRadians(144)),
                                 new Pose(60.5979, 56.84113),
                                 new Pose(22.359, 55.263, Math.toRadians(180))
 
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(180))
-                .setVelocityConstraint(15)
+                .setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(180))
+                .setVelocityConstraint(10)
                 .build();
         shoot3Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(22.359, 55.263, Math.toRadians(180)),
+                                new Pose(22.859, 55.263, Math.toRadians(180)),
                                 new Pose(43.5636, 62.6470),
-                                new Pose(55.204, 84.095, Math.toRadians(180))
+                                new Pose(53.704, 85.595, Math.toRadians(144))
 
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(144))
                 .build();
         pickup3Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(55.204, 84.095, Math.toRadians(180)),
+                                new Pose(53.704, 85.595, Math.toRadians(144)),
                                 new Pose(65.0269, 30.0499),
                                 new Pose(20.096, 35.672, Math.toRadians(180))
 
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(180))
-                .setVelocityConstraint(20)
+                .setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(180))
+                .setVelocityConstraint(10)
                 .build();
         shoot4Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(20.096, 35.672, Math.toRadians(180)),
-                                new Pose(55.204, 84.095, Math.toRadians(180))
+                                new Pose(21.096, 35.672, Math.toRadians(180)),
+                                new Pose(53.704, 85.595, Math.toRadians(144))
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(144))
                 .build();
-        leavePath = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(
-                                new Pose(55.204, 84.095, Math.toRadians(180)),
-                                new Pose(45, 60.095, Math.toRadians(180))
-                        )
-                )
-                .setConstantHeadingInterpolation(Math.toRadians(180))
-                .build();
+
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
     }
@@ -148,14 +142,17 @@ public class Blue15CloseAuto extends OpMode {
     @Override
     public void loop() {
         follower.update();
-        PoseStorage.lastPose = follower.getPose();
+
+        PoseStorage.x = follower.getPose().getX();
+        PoseStorage.y = follower.getPose().getY();
+        PoseStorage.heading = follower.getPose().getHeading();
 
 
         Pose robotPose = follower.getPose(); // Use follower, not robot.follower
-        if(robotPose.getY() < 60){
+        if (robotPose.getY() < 55) {
             robot.UpdateTarget(6, 152);
         } else {
-            robot.UpdateTarget(3, 150);
+            robot.UpdateTarget(0, 150);
         }
 
         robot.updateTurretTracking();
@@ -175,81 +172,6 @@ public class Blue15CloseAuto extends OpMode {
         autonomousUpdate();
         CommandManager.INSTANCE.run();
     }
-
-    //    public void autonomousUpdate() {
-//        switch (pathState) {
-//            case 0:
-//                // Start shooting sequence
-//                actionTimer.resetTimer();
-//                robot.setTurretTrackingActive(true);
-//
-//                shooterActive = true;
-//                follower.followPath(shoot1Path, false);
-//                pathState = 1;
-//                break;
-//            case 1:
-//                // Wait for shooting to complete (adjust time as needed)
-//                if (actionTimer.getElapsedTimeSeconds() > 2.55) {
-//                    // Kick the sample out
-//
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            new SequentialGroup(
-//                                    robot.OuttakeOne()
-//                            ));
-//                    if (!follower.isBusy()) {
-//                        pathState = 2; // Done
-//                        actionTimer.resetTimer();
-//                        shooterActive = false;
-//                    }
-//                }
-//                break;
-//
-//
-//            case 2:
-//                // Wait for butt kicker to complete
-//                if (actionTimer.getElapsedTimeSeconds() > 2) {
-//                    follower.followPath(pickup1Path);
-//
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            robot.intakeAndTransfer()
-//                            );
-//
-//                    if (!follower.isBusy()) {
-//                        pathState = 3;
-//                        shooterActive = true;
-//                        actionTimer.resetTimer();
-//                    }
-//                }
-//                break;
-//
-//            case 3:
-//                if (actionTimer.getElapsedTimeSeconds() > 4) {
-//                    follower.followPath(shoot2Path);
-//
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            robot.OuttakeOne()
-//                    );
-//
-//                    if (!follower.isBusy()) {
-//                        pathState = 4;
-//                        shooterActive = false;
-//                        actionTimer.resetTimer();
-//                    }
-//                }
-//                break;
-//            case 4:
-//                // Wait for path to complete
-//                if (!follower.isBusy()) {
-//                    pathState = 5; // Done
-//
-//                }
-//                break;
-//
-//            case 5:
-//                // Autonomous complete - do nothing
-//                break;
-//        }
-//    }
     public void autonomousUpdate() {
         switch (pathState) {
             case 0:
@@ -265,7 +187,7 @@ public class Blue15CloseAuto extends OpMode {
 
             case 1:
                 // Wait for path to complete AND timer
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.55) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.95) {
                     // Shoot the preload
                     CommandManager.INSTANCE.scheduleCommand(
                             robot.OuttakeOne()
@@ -284,7 +206,7 @@ public class Blue15CloseAuto extends OpMode {
 
                     // Schedule intake ONCE
                     CommandManager.INSTANCE.scheduleCommand(
-                            robot.intakeAndTransfer()
+                            robot.intakeAndTransferAuto()
                     );
 
                     actionTimer.resetTimer();
@@ -308,7 +230,7 @@ public class Blue15CloseAuto extends OpMode {
                 if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
                     // Shoot the sample
                     CommandManager.INSTANCE.scheduleCommand(
-                                    robot.OuttakeOne()
+                            robot.OuttakeOne()
 
                     );
 
@@ -324,7 +246,7 @@ public class Blue15CloseAuto extends OpMode {
 
                     // Schedule intake ONCE
                     CommandManager.INSTANCE.scheduleCommand(
-                            robot.intakeAndTransfer()
+                            robot.intakeAndTransferAuto()
                     );
 
                     actionTimer.resetTimer();
@@ -363,7 +285,7 @@ public class Blue15CloseAuto extends OpMode {
 
                     // Schedule intake ONCE
                     CommandManager.INSTANCE.scheduleCommand(
-                            robot.intakeAndTransfer()
+                            robot.intakeAndTransferAuto()
                     );
 
                     actionTimer.resetTimer();
@@ -386,7 +308,10 @@ public class Blue15CloseAuto extends OpMode {
                 if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 3.15) {
                     // Shoot the sample
                     CommandManager.INSTANCE.scheduleCommand(
-                            robot.OuttakeOne()
+                            new SequentialGroup(
+                                    robot.OuttakeOne()
+
+                            )
 
                     );
 
@@ -401,18 +326,22 @@ public class Blue15CloseAuto extends OpMode {
                 }
                 break; // ✅
             case 12:
-                // Wait for final outtake to complete
-                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
-                    pathState = 12; // Done
+                // Wait for final path to finish
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
+
+                    // Schedule turret zeroing
+
+                    pathState = 13; // Done
                 }
-                break; // ✅
+                break;
 
             case 13:
-                // Autonomous complete - do nothing
+                // Autonomous complete, do nothing
                 break;
         }
     }
 }
+
 
 
 

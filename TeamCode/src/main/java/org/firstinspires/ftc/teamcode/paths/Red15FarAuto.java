@@ -49,7 +49,7 @@ public class Red15FarAuto extends OpMode {
                                 new Pose(88, 8, Math.toRadians(90)),
 //
                                 new Pose(88.327
-                                        , 34.294, Math.toRadians(90))
+                                        , 15.294, Math.toRadians(90))
                         )
                 )
                 .setConstantHeadingInterpolation(Math.toRadians(90))

@@ -1,24 +1,48 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.rowanmcalpin.nextftc.core.command.Command;
 import com.rowanmcalpin.nextftc.core.command.CommandManager;
 import com.rowanmcalpin.nextftc.core.command.groups.ParallelGroup;
+import com.rowanmcalpin.nextftc.core.command.utility.InstantCommand;
+import com.rowanmcalpin.nextftc.core.command.utility.delays.WaitUntil;
 
-@TeleOp(name = "Turret CRServo TeleOp")
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.testing.DriveTrainFloat;
+
+@TeleOp(name = "Teleop Red")
 public class TeleopRed extends OpMode {
-    AllmechsRed robot;
+    AllMechCopy robot;
     boolean Outtake;
     Gamepad currentGamepad1, previousGamepad1, currentGamepad2, previousGamepad2;
     private final FtcDashboard dash = FtcDashboard.getInstance();
+    private int lastLowPos = 0;
+    private int lastHighPos = 0;
+    private long lastTime = 0;
+    private double currentVelocity = 0.0;
+
+    private double manualXOffset = 0.0;
+    private double manualYOffset = 0.0;
+    private double ADJUSTMENT_STEP = 2;
+
+
 
     @Override
     public void init() {
-        robot = new AllmechsRed(hardwareMap, gamepad1, gamepad2);
+        Follower follower = Constants.createFollower(hardwareMap);
+        robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
+        robot.limelight.pipelineSwitch(1);
+        DriveTrainFloat.setToFloatMode(hardwareMap);
+        robot.follower.setStartingPose(new Pose(PoseStorage.x, PoseStorage.y, PoseStorage.heading));
 
         currentGamepad1 = new Gamepad();
         currentGamepad2 = new Gamepad();
@@ -29,6 +53,10 @@ public class TeleopRed extends OpMode {
         telemetry.addLine("=== CONTROLS ===");
         telemetry.addData("GP1 R1", "Toggle Turret Tracking");
         telemetry.update();
+
+        lastLowPos = robot.outtakeLow.getCurrentPosition();
+        lastHighPos = robot.outtakeHigh.getCurrentPosition();
+        lastTime = System.nanoTime();
     }
 
     @Override
@@ -46,6 +74,8 @@ public class TeleopRed extends OpMode {
         currentGamepad2.copy(gamepad2);
         robot.follower.update();
 
+        calculateShooterVelocity();
+
         double y = -gamepad2.left_stick_y;
         double x = -gamepad2.left_stick_x * 1.1;
         double rx = -gamepad2.right_stick_x;
@@ -56,17 +86,7 @@ public class TeleopRed extends OpMode {
         robot.updateLimelightData();
         boolean hasTarget = robot.hasValidTarget();
         LLResult result = hasTarget ? robot.limelight.getLatestResult() : null;
-
-        // ========== TURRET TRACKING TOGGLE ==========
-        if (currentGamepad1.right_bumper && !previousGamepad1.right_bumper) {
-            robot.setTurretTrackingActive(!robot.isTurretTrackingActive());
-        }
-
-        // Disable tracking if target is lost
-//        if (!hasTarget && robot.isTurretTrackingActive()) {
-//            robot.setTurretTrackingActive(false);
-//        }
-        // ============= UPDATE SHOOTER  ============
+        Pose robotPose = robot.follower.getPose();
 
 
         // ========== UPDATE TURRET ==========
@@ -81,45 +101,37 @@ public class TeleopRed extends OpMode {
             telemetry.addData("Status", "NO TARGET");
         }
 
-        if(gamepad1.dpad_right){
+        if(gamepad1.dpadRightWasPressed()){
+            manualXOffset += ADJUSTMENT_STEP;
+        }
+        if(gamepad1.dpadLeftWasPressed()){
+            manualXOffset -= ADJUSTMENT_STEP;
+        }
+        if(gamepad1.dpadUpWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
-                    robot.intakeOn()
+                    robot.intakeAndTransfer()
             );
         }
-        if(gamepad1.dpad_left){
-            CommandManager.INSTANCE.scheduleCommand(
-                    robot.intakeOff()
-            );
-        }
-        if(gamepad1.dpad_up){
-            CommandManager.INSTANCE.scheduleCommand(
-                    new ParallelGroup(
-                            robot.transferOn(),
-                            robot.intakeOn(),
-                            robot.transferCheck(),
-                            robot.doorOpen()
-                    )
-            );
-        }
-        if (gamepad1.right_bumper){
+        if (gamepad1.rightBumperWasPressed()){
 
-            CommandManager.INSTANCE.scheduleCommand(
-                    new ParallelGroup(
-                            robot.transferOn(),
-                            robot.doorOpen()
-                    )
-            );
+            manualYOffset += ADJUSTMENT_STEP;
+
 
         }
-        if(gamepad1.left_bumper){
-            CommandManager.INSTANCE.scheduleCommand(
-                    robot.transferOff()
-            );
+        if(gamepad1.leftBumperWasPressed()){
+            manualYOffset -= ADJUSTMENT_STEP;
+
         }
-        if(gamepad1.triangle){
+        if(gamepad1.triangleWasPressed()){
             Outtake = true;
 
         }
+        if(gamepad2.triangleWasPressed()){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.relocalize()
+            );
+        }
+
 
         if (Outtake){
             robot.periodicShooterUpdateAndApplyPID();
@@ -131,22 +143,36 @@ public class TeleopRed extends OpMode {
             );
         }
 
-
-        if(gamepad1.circle){
+        if(gamepad1.circleWasPressed()){
             Outtake=false;
 //
         }
-        if(gamepad2.square){
+        if(gamepad2.squareWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.turretOn()
             );
         }
-        if(gamepad2.cross){
+
+        if(gamepad2.crossWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
-                    robot.turretOff()
+                    robot.turret()
             );
         }
-        if(gamepad1.dpad_down){
+        if(gamepad2.circleWasPressed()){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.OuttakeOne()
+            );
+        }
+
+        if(robotPose.getY()<60){
+            robot.UpdateTarget(138.5 + manualXOffset,152 + manualYOffset);
+        } else {
+            robot.UpdateTarget(141.5 + manualXOffset,148 + manualYOffset); // 0,148
+        }
+
+
+
+        if(gamepad1.dpadDownWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.IntakeOut()
             );
@@ -155,7 +181,7 @@ public class TeleopRed extends OpMode {
 
 
 
-        if(gamepad1.right_stick_button) {
+        if(gamepad1.leftStickButtonWasPressed()) {
             CommandManager.INSTANCE.scheduleCommand(
                     robot.ButtKicker()
             );
@@ -163,14 +189,33 @@ public class TeleopRed extends OpMode {
 
 
         CommandManager.INSTANCE.run();
-
-
+        double distanceCmFront = 100;
+        double distanceCmBack = 100;
+        if(robot.colorSensorFront instanceof DistanceSensor){
+            distanceCmFront = ((DistanceSensor) robot.colorSensorFront).getDistance(DistanceUnit.CM);}
+        if(robot.colorSensorBack instanceof DistanceSensor){
+            distanceCmBack = ((DistanceSensor) robot.colorSensorBack).getDistance(DistanceUnit.CM);}
 
 
         telemetry.addLine();
+
         telemetry.addLine("=== TURRET STATUS ===");
         telemetry.addData("Control",
                 robot.isTurretTrackingActive() ? "AUTO (R1 to disable)" : "READY (R1 to enable)");
+        telemetry.addData("Current", robot.intake.getCurrent(CurrentUnit.MILLIAMPS));
+        telemetry.addData("Field Active: ", robot.FieldRelativeTrue());
+        telemetry.addData("Target Velocity", "%.1f ticks/sec", robot.shooterTargetVelocity);
+        telemetry.addData("Current Velocity", "%.1f ticks/sec", currentVelocity);
+        telemetry.addData("Velocity Error", "%.1f ticks/sec",
+                robot.shooterTargetVelocity - currentVelocity);
+        telemetry.addData("Front Distance", "%.2f cm", distanceCmFront);
+        telemetry.addData("Back Distance", "%.2f cm", distanceCmBack);
+        telemetry.addData("Front Ball Detected", distanceCmFront < 6.5 ? "YES ✓" : "NO");
+        telemetry.addData("Back Ball Detected", distanceCmBack < 6.5 ? "YES ✓" : "NO");
+        telemetry.addData("followerXPose: ", robotPose.getX());
+        telemetry.addData("followerYPose: ", robotPose.getY());
+        telemetry.addData("followerHeading: ", robotPose.getHeading());
+
 
         telemetry.update();
     }
@@ -180,6 +225,24 @@ public class TeleopRed extends OpMode {
     public void stop() {
         robot.setTurretTrackingActive(false);
         super.stop();
+    }
+
+    private void calculateShooterVelocity() {
+        int lowPos = robot.outtakeLow.getCurrentPosition();
+        int highPos = robot.outtakeHigh.getCurrentPosition();
+        long now = System.nanoTime();
+
+        double dt = (now - lastTime) / 1e9;
+
+        if (dt > 0) {
+            double lowVel = (lowPos - lastLowPos) / dt;
+            double highVel = (highPos - lastHighPos) / dt;
+            currentVelocity = (lowVel + highVel) / 2.0;
+        }
+
+        lastLowPos = lowPos;
+        lastHighPos = highPos;
+        lastTime = now;
     }
 
 

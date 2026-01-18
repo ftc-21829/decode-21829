@@ -109,33 +109,7 @@ public class Blue15FarAutoFirst extends OpMode {
 
 
             case 2:
-                // Wait for butt kicker to complete
-//
-//                    // Turn off mechanisms
-//                    CommandManager.INSTANCE.scheduleCommand(
-//
-//                                    robot.ButtKicker()
-//
-//                            );
-//                    actionTimer.resetTimer();
-////                     Start leaving
-//                    pathState = 3;
-//                }
-//                break;
-//
-//            case 3:
-//                // Wait for butt kicker to complete
-//                if (actionTimer.getElapsedTimeSeconds() > 5) {
-//                    // Turn off mechanisms
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            new ParallelGroup(
-//                                    robot.transferOff(),
-//                                       robot.OuttakeOff(),
-//                                    robot.doorClose(),
-//                                    robot.intakeOff()
-//                            ));
-//                     Start leaving
-//                    follower.followPath(leavePath);
+
                 pathState = 3;
                 break;
             case 3:

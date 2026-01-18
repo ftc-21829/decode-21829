@@ -49,7 +49,7 @@ public class AllMechCopy {
     public MultipleTelemetry telemetry;
     public Gamepad gamepad1;
     public Gamepad gamepad2;
-    private RTPAxon axon;
+    public RTPAxon axon;
     VoltageSensor battery;
 
     com.pedropathing.util.Timer actionTimer;
@@ -202,6 +202,32 @@ public class AllMechCopy {
             updatePoseFromAprilTag();
         }
     }
+    private double calculateFieldRelativeTurretError() {
+        Pose robotPose = follower.getPose();
+
+        double robotX = robotPose.getX();
+        double robotY = robotPose.getY();
+        double robotHeading = robotPose.getHeading(); // radians
+
+        double dx = TARGET_X - robotX;
+        double dy = TARGET_Y - robotY;
+
+        double angleToTarget = Math.atan2(dy, dx); // radians
+
+        // Convert turret relative angle to radians
+        double turretRelRad = Math.toRadians(getTurretRelativeAngle()/2.37931024483);
+
+        double turretError =
+                angleToTarget
+                        - robotHeading;
+
+        turretError = Math.atan2(Math.sin(turretError), Math.cos(turretError));
+
+        return Math.toDegrees(turretError) * 2.37931024483;
+    }
+    private double getTurretRelativeAngle() {
+        return axon.getCurrentAngle() - TurretPoseStorage.autoEndTurretAngle;
+    }
 
     private void updatePoseFromAprilTag() {
         // TODO: Implement AprilTag pose fusion for continuous pose correction
@@ -261,30 +287,7 @@ public class AllMechCopy {
      * Calculate the turret error angle using field-relative positioning from Pinpoint odometry.
      * Returns the angle error in degrees (positive = turn right, negative = turn left).
      */
-    private double calculateFieldRelativeTurretError() {
-        // Get current robot pose from Pinpoint via Pedro Pathing
-        Pose robotPose = follower.getPose();
 
-        double robotX = robotPose.getX();
-        double robotY = robotPose.getY();
-        double robotHeading = robotPose.getHeading(); // In radians
-
-        // Calculate vector from robot to target
-        double dx = TARGET_X - robotX;
-        double dy = TARGET_Y - robotY;
-
-        // Calculate absolute angle to target
-        double angleToTarget = Math.atan2(dy, dx);
-
-        // Calculate turret angle relative to robot
-        double turretAngle = angleToTarget - robotHeading;
-
-        // Normalize to [-π, π]
-        turretAngle = Math.atan2(Math.sin(turretAngle), Math.cos(turretAngle));
-
-        // Convert to degrees for error (to match Limelight tx units)
-        return Math.toDegrees(turretAngle) * 2.37931024483;
-    }
 
     private double distance(double x, double y){
         return Math.pow((Math.pow((TARGET_X-x),2)+Math.pow((TARGET_Y-y),2)), 0.5);
@@ -442,12 +445,22 @@ public class AllMechCopy {
     public Command transferReverse() {
 
         return new SequentialGroup(
-                new InstantCommand(() -> transfer.setPower(-0.21)),
+                new InstantCommand(() -> transfer.setPower(-0.11)),
                 new Delay(1),
                 transferOff()
         );
 
     }
+    public Command transferReverseAuto() {
+
+        return new SequentialGroup(
+                new InstantCommand(() -> transfer.setPower(-0.18)),
+                new Delay(1),
+                transferOff()
+        );
+
+    }
+
 
     public Command transferSlow() { return new InstantCommand(() -> transfer.setPower(0.75)); }
 
@@ -513,6 +526,32 @@ public class AllMechCopy {
                 new InstantCommand(() -> outtakeLow.setPower(0))
         );
     }
+    public Command axonZero() {
+        return new SequentialGroup(
+                // Disable field tracking
+                turretOn(),
+
+                // Enable RTP mode and set target to 0
+                new InstantCommand(() -> {
+                    axon.setRtp(true);
+                    axon.setTargetRotation(0.0);
+                }),
+
+                // Continuously update axon until it reaches 0 (within tolerance)
+                new WaitUntil(() -> {
+                    axon.update(); // CRITICAL: Update the RTP controller
+                    double error = Math.abs(axon.getTargetRotation() - axon.getTotalRotation());
+                    return error < 5; // Within 2 degrees of target
+                }),
+
+                // Stop the turret
+                new InstantCommand(() -> {
+                    axon.setPower(0.0);
+                    axon.setRtp(false);
+                })
+        );
+    }
+
     public Command turretOn() {
         return new ParallelGroup(
                 new InstantCommand(() -> setTurretTrackingActive(!isTurretTrackingActive())));
@@ -548,6 +587,22 @@ public class AllMechCopy {
 
         );
     }
+    public Command transferCheckAuto() {
+        return new WaitUntil(() -> {
+            double distanceCm = 100;
+            if (colorSensor instanceof DistanceSensor) {
+                distanceCm = ((DistanceSensor) colorSensor).getDistance(DistanceUnit.CM);
+            }
+            return distanceCm < 1.0;
+        }).then(
+
+                new ParallelGroup(
+                        doorClose(),
+                        transferReverseAuto()
+                )
+
+        );
+    }
     public Command relocalize(){
 
         return new InstantCommand(()-> {
@@ -560,6 +615,30 @@ public class AllMechCopy {
                 transferOn(),
                 intakeOn(),
                 transferCheck(),
+                doorOpen(),
+                new WaitUntil(()->{
+                    double distanceCmFront = 100;
+                    double distanceCmBack = 100;
+                    if(colorSensorFront instanceof DistanceSensor){
+                        distanceCmFront = ((DistanceSensor) colorSensorFront).getDistance(DistanceUnit.CM);}
+                    if(colorSensorBack instanceof DistanceSensor){
+                        distanceCmBack = ((DistanceSensor) colorSensorBack).getDistance(DistanceUnit.CM);}
+
+                    return distanceCmFront < 7 && distanceCmBack < 7; // 6.25
+                }).then(
+                        new ParallelGroup(
+                                intakeOff(),
+                                transferOff()
+                        )
+
+                )
+        );
+    }
+    public Command intakeAndTransferAuto() {
+        return new ParallelGroup(
+                transferOn(),
+                intakeOn(),
+                transferCheckAuto(),
                 doorOpen(),
                 new WaitUntil(()->{
                     double distanceCmFront = 100;
