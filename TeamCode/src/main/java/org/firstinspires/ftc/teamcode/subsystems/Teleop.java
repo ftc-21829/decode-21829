@@ -19,7 +19,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.testing.DriveTrainFloat;
 
-@TeleOp(name = "Turret CRServo TeleOp - Blue")
+@TeleOp(name = "TeleopBlue")
 public class Teleop extends OpMode {
     AllMechCopy robot;
     boolean Outtake;
@@ -33,13 +33,19 @@ public class Teleop extends OpMode {
     private double manualYOffset = 0.0;
     public static double ADJUSTMENT_STEP = 0.5;
 
+    private double manualXOffset = 0.0;
+    private double manualYOffset = 0.0;
+    private double ADJUSTMENT_STEP = 2;
+
+
+
     @Override
     public void init() {
         Follower follower = Constants.createFollower(hardwareMap);
         robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
 
         DriveTrainFloat.setToFloatMode(hardwareMap);
-        robot.follower.setStartingPose(PoseStorage.lastPose);
+        robot.follower.setStartingPose(new Pose(PoseStorage.x, PoseStorage.y, PoseStorage.heading));
 
         currentGamepad1 = new Gamepad();
         currentGamepad2 = new Gamepad();
@@ -99,14 +105,10 @@ public class Teleop extends OpMode {
         }
 
         if(gamepad1.dpadRightWasPressed()){
-            CommandManager.INSTANCE.scheduleCommand(
-                    robot.intakeOn()
-            );
+            manualXOffset += ADJUSTMENT_STEP;
         }
         if(gamepad1.dpadLeftWasPressed()){
-            CommandManager.INSTANCE.scheduleCommand(
-                    robot.intakeOff()
-            );
+            manualXOffset -= ADJUSTMENT_STEP;
         }
         if(gamepad1.dpadUpWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
@@ -115,18 +117,13 @@ public class Teleop extends OpMode {
         }
         if (gamepad1.rightBumperWasPressed()){
 
-            CommandManager.INSTANCE.scheduleCommand(
-                    new ParallelGroup(
-                            robot.transferOn(),
-                            robot.doorOpen()
-                    )
-            );
+            manualYOffset += ADJUSTMENT_STEP;
+
 
         }
         if(gamepad1.leftBumperWasPressed()){
-            CommandManager.INSTANCE.scheduleCommand(
-                    robot.transferOff()
-            );
+            manualYOffset -= ADJUSTMENT_STEP;
+
         }
         if(gamepad1.triangleWasPressed()){
             Outtake = true;
@@ -171,9 +168,9 @@ public class Teleop extends OpMode {
         }
 
         if(robotPose.getY()<60){
-            robot.UpdateTarget(5.5,152);
+            robot.UpdateTarget(5.5 + manualXOffset,152 + manualYOffset);
         } else {
-            robot.UpdateTarget(3.5,148); // 0,148
+            robot.UpdateTarget(3.5 + manualXOffset,148 + manualYOffset); // 0,148
         }
 
 
