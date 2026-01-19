@@ -181,6 +181,10 @@ public class AllMechCopy {
         axon.setPidCoeffs(kps, kis, kds);
 
     }
+    public double getRotation(){
+
+        return axon.getTotalRotation();
+    }
 
 
     private void initializeLimelight(HardwareMap hardwareMap) {
@@ -215,19 +219,55 @@ public class AllMechCopy {
         double angleToTarget = Math.atan2(dy, dx); // radians
 
         // Convert turret relative angle to radians
-        double turretRelRad = Math.toRadians(getTurretRelativeAngle()/2.37931024483);
+        double turretRelRad = Math.toRadians(TurretPoseStorage.autoEndTurretAngle);
 
         double turretError =
-                angleToTarget
-                        - robotHeading;
+                angleToTarget - robotHeading - turretRelRad;
 
         turretError = Math.atan2(Math.sin(turretError), Math.cos(turretError));
 
         return Math.toDegrees(turretError) * 2.37931024483;
     }
-    private double getTurretRelativeAngle() {
-        return axon.getCurrentAngle() - TurretPoseStorage.autoEndTurretAngle;
+    private double calculateFieldRelativeTurretErrorNoTurretRel() {
+        Pose robotPose = follower.getPose();
+
+        double robotX = robotPose.getX();
+        double robotY = robotPose.getY();
+        double robotHeading = robotPose.getHeading(); // radians
+
+        double dx = TARGET_X - robotX;
+        double dy = TARGET_Y - robotY;
+
+        double angleToTarget = Math.atan2(dy, dx); // radians
+
+        double turretError =
+                angleToTarget - robotHeading;
+
+        turretError = Math.atan2(Math.sin(turretError), Math.cos(turretError));
+
+        return Math.toDegrees(turretError) * 2.37931024483;
     }
+    public void updateTurretTracking_NoTurretRel() {
+        if (!turretTrackingActive) {
+            axon.setPower(0.0);
+            return;
+        }
+
+        if (USE_FIELD_RELATIVE_TRACKING) {
+
+            axon.setRtp(true);
+
+            double error = calculateFieldRelativeTurretErrorNoTurretRel();
+
+            axon.setTargetRotation(error);
+            axon.update();
+
+            return;
+        }
+
+        // Limelight path intentionally unchanged
+    }
+
 
     private void updatePoseFromAprilTag() {
         // TODO: Implement AprilTag pose fusion for continuous pose correction
@@ -665,20 +705,20 @@ public class AllMechCopy {
 
     public double computeHoodPositionFromDistance(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
-        return 3.40499* Math.pow(10,-8) * Math.pow(distanceMM, 4)
-                - 0.0000156757 * Math.pow(distanceMM,3)
-                + 0.00258683*Math.pow(distanceMM,2)
-                - 0.173463 * distanceMM
-                + 4.10365;
+        return 2.02634* Math.pow(10,-8) * Math.pow(distanceMM, 4)
+                - 0.00000921217 * Math.pow(distanceMM,3)
+                + 0.00141671 * Math.pow(distanceMM,2)
+                - 0.0779454 * distanceMM
+                + 1.39711;
     }
 
     public double computeShooterTargetVelocityFromDistance(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
-        shooterTargetVelocity = -0.0000213794 * Math.pow(distanceMM, 4)
-                + 0.00838221 * Math.pow(distanceMM,3)
-                - 1.14285 * Math.pow(distanceMM, 2)
-                + 70.67761 * distanceMM
-                - 605.33209;
+        shooterTargetVelocity = 0.00000366362 * Math.pow(distanceMM, 4)
+                - 0.0016287 * Math.pow(distanceMM,3)
+                + 0.250495 * Math.pow(distanceMM, 2)
+                - 9.94307 * distanceMM
+                + 990.09792;
         return shooterTargetVelocity;
     }
 
@@ -752,7 +792,7 @@ public class AllMechCopy {
 
         outtakeLow.setPower(power);
         outtakeHigh.setPower(power);
-        hood.setPosition(targetHoodPosition);
+        hood.setPosition(Math.max(0, Math.min(targetHoodPosition, 0.8)));
     }
 
 }

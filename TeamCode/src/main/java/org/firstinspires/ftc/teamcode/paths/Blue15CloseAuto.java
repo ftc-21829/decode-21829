@@ -18,6 +18,7 @@ import com.rowanmcalpin.nextftc.core.command.utility.InstantCommand;
 import com.rowanmcalpin.nextftc.core.command.utility.delays.Delay;
 import com.rowanmcalpin.nextftc.core.command.utility.delays.WaitUntil;
 
+import org.apache.commons.math3.special.BesselJ;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.AllMechCopy;
@@ -51,6 +52,9 @@ public class Blue15CloseAuto extends OpMode {
 
 
         robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
+
+        TurretPoseStorage.autoEndTurretAngle = robot.getRotation();
+
         actionTimer = new Timer();
 
         // Build the leave path
@@ -70,17 +74,17 @@ public class Blue15CloseAuto extends OpMode {
                 .addPath(
                         new BezierLine(
                                 new Pose(53.704, 85.595, Math.toRadians(180)),
-                                new Pose(25.37, 84.124, Math.toRadians(180))
+                                new Pose(25.37, 86.124, Math.toRadians(180))
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
                 .setVelocityConstraint(10)
                 .build();
         shoot2Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(25.37, 84.124, Math.toRadians(180)),
+                                new Pose(25.37, 86.124, Math.toRadians(180)),
                                 new Pose(53.704, 85.595, Math.toRadians(144))
                         )
                 )
@@ -103,7 +107,7 @@ public class Blue15CloseAuto extends OpMode {
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(22.859, 55.263, Math.toRadians(180)),
+                                new Pose(22.359, 55.263, Math.toRadians(180)),
                                 new Pose(43.5636, 62.6470),
                                 new Pose(53.704, 85.595, Math.toRadians(144))
 
@@ -117,7 +121,7 @@ public class Blue15CloseAuto extends OpMode {
                         new BezierCurve(
                                 new Pose(53.704, 85.595, Math.toRadians(144)),
                                 new Pose(65.0269, 30.0499),
-                                new Pose(20.096, 35.672, Math.toRadians(180))
+                                new Pose(19.096, 35.672, Math.toRadians(180))
 
                         )
                 )
@@ -128,12 +132,26 @@ public class Blue15CloseAuto extends OpMode {
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(21.096, 35.672, Math.toRadians(180)),
+                                new Pose(19.096, 35.672, Math.toRadians(180)),
                                 new Pose(53.704, 85.595, Math.toRadians(144))
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(144))
                 .build();
+        leavePath = follower
+                .pathBuilder()
+                        .addPath(
+
+                                new BezierLine(
+                                        new Pose (53.704, 85.595, Math.toRadians(144)),
+                                        new Pose (48,72, Math.toRadians(144))
+                                )
+
+                                )
+                .setConstantHeadingInterpolation(Math.toRadians(144))
+                .build();
+
+
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
@@ -146,16 +164,13 @@ public class Blue15CloseAuto extends OpMode {
         PoseStorage.x = follower.getPose().getX();
         PoseStorage.y = follower.getPose().getY();
         PoseStorage.heading = follower.getPose().getHeading();
+        TurretPoseStorage.autoEndTurretAngle= (robot.axon.getTotalRotation()/2.37931024483);
 
 
         Pose robotPose = follower.getPose(); // Use follower, not robot.follower
-        if (robotPose.getY() < 55) {
-            robot.UpdateTarget(6, 152);
-        } else {
-            robot.UpdateTarget(0, 150);
-        }
 
-        robot.updateTurretTracking();
+
+        robot.updateTurretTracking_NoTurretRel();
         // CRITICAL: Continuously update shooter when active
         if (shooterActive) {
             robot.periodicShooterUpdateAndApplyPID();
@@ -179,6 +194,7 @@ public class Blue15CloseAuto extends OpMode {
                 actionTimer.resetTimer();
                 robot.setTurretTrackingActive(true);
                 shooterActive = true;
+                robot.UpdateTarget(2,144);
 
                 follower.followPath(shoot1Path, false);
 
@@ -203,6 +219,7 @@ public class Blue15CloseAuto extends OpMode {
                 if (actionTimer.getElapsedTimeSeconds() > 2.5) {
                     // Start pickup path
                     follower.followPath(pickup1Path, false);
+                    robot.UpdateTarget(-8,141);
 
                     // Schedule intake ONCE
                     CommandManager.INSTANCE.scheduleCommand(
@@ -258,6 +275,7 @@ public class Blue15CloseAuto extends OpMode {
                 if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.25) {
                     // Start shoot path
                     follower.followPath(shoot3Path, true);
+                    robot.UpdateTarget(-8, 138);
 
                     actionTimer.resetTimer();
                     pathState = 7;
@@ -309,7 +327,8 @@ public class Blue15CloseAuto extends OpMode {
                     // Shoot the sample
                     CommandManager.INSTANCE.scheduleCommand(
                             new SequentialGroup(
-                                    robot.OuttakeOne()
+                                    robot.OuttakeOne(),
+                                    new Delay(2)
 
                             )
 
@@ -339,7 +358,10 @@ public class Blue15CloseAuto extends OpMode {
                 // Autonomous complete, do nothing
                 break;
         }
-    }
+
+
+
+        }
 }
 
 
