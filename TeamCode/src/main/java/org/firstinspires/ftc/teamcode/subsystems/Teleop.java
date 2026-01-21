@@ -168,9 +168,9 @@ public class Teleop extends OpMode {
         }
 
         if(robotPose.getY()<60){
-            robot.UpdateTarget(5.5 + manualXOffset,152 + manualYOffset);
+            robot.UpdateTarget(-3 + manualXOffset,144 + manualYOffset);
         } else {
-            robot.UpdateTarget(3.5 + manualXOffset,148 + manualYOffset); // 0,148
+            robot.UpdateTarget(-3 + manualXOffset,144 + manualYOffset); // 0,148
         }
 
 

@@ -27,9 +27,9 @@ import org.firstinspires.ftc.teamcode.subsystems.PoseStorage;
 import org.firstinspires.ftc.teamcode.subsystems.TurretPoseStorage;
 import org.firstinspires.ftc.teamcode.testing.DriveTrainFloat;
 
-@Autonomous(name = "Blue15Close", group = "Autonomous")
+@Autonomous(name = "Red15Close", group = "Autonomous")
 @Configurable
-public class Blue15CloseAuto extends OpMode {
+public class Red15CloseAuto extends OpMode {
     private TelemetryManager panelsTelemetry;
     public Follower follower;
     private int pathState;
@@ -43,15 +43,17 @@ public class Blue15CloseAuto extends OpMode {
     public void init() {
         panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(20.67, 122.855, Math.toRadians(144)));
+        follower.setStartingPose(new Pose(122.33, 122.855, Math.toRadians(36)));
         pathState = 0;
         DriveTrainFloat.setToFloatMode(hardwareMap);
-        PoseStorage.x = 20.67;
+        PoseStorage.x = 122.33;
         PoseStorage.y = 122.855;
-        PoseStorage.heading = Math.toRadians(144);
+        PoseStorage.heading = Math.toRadians(36);
 
 
         robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
+        robot.UpdateTarget(144,144);
+
 
         TurretPoseStorage.autoEndTurretAngle = robot.getRotation();
 
@@ -62,94 +64,96 @@ public class Blue15CloseAuto extends OpMode {
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(20.67, 122.855, Math.toRadians(144)),
-                                new Pose(53.704, 85.595, Math.toRadians(180))
+                                new Pose(122.33, 122.855, Math.toRadians(36)),
+                                new Pose(90.296, 85.595, Math.toRadians(0))
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
                 .build();
 
         pickup1Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(53.704, 85.595, Math.toRadians(180)),
-                                new Pose(25.37, 86.124, Math.toRadians(180))
+                                new Pose(90.296, 85.595, Math.toRadians(0)),
+                                new Pose(117.63, 86.124, Math.toRadians(0))
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
                 .setVelocityConstraint(10)
                 .build();
+
         shoot2Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(25.37, 86.124, Math.toRadians(180)),
-                                new Pose(53.704, 85.595, Math.toRadians(144))
+                                new Pose(117.63, 86.124, Math.toRadians(0)),
+                                new Pose(90.296, 85.595, Math.toRadians(36))
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(144))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                 .build();
+
         pickup2Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(53.704, 85.595, Math.toRadians(144)),
-                                new Pose(60.5979, 56.84113),
-                                new Pose(22.359, 55.263, Math.toRadians(180))
-
+                                new Pose(90.296, 85.595, Math.toRadians(36)),
+                                new Pose(83.4021, 56.84113),
+                                new Pose(120.641, 55.263, Math.toRadians(0))
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
                 .setVelocityConstraint(10)
                 .build();
+
         shoot3Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(22.359, 55.263, Math.toRadians(180)),
-                                new Pose(43.5636, 62.6470),
-                                new Pose(53.704, 85.595, Math.toRadians(144))
-
+                                new Pose(120.641, 55.263, Math.toRadians(0)),
+                                new Pose(100.4364, 62.6470),
+                                new Pose(90.296, 85.595, Math.toRadians(36))
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(144))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                 .build();
+
         pickup3Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(53.704, 85.595, Math.toRadians(144)),
-                                new Pose(65.0269, 30.0499),
-                                new Pose(19.096, 35.672, Math.toRadians(180))
-
+                                new Pose(90.296, 85.595, Math.toRadians(36)),
+                                new Pose(78.9731, 30.0499),
+                                new Pose(123.904, 35.672, Math.toRadians(0))
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
                 .setVelocityConstraint(10)
                 .build();
+
         shoot4Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(19.096, 35.672, Math.toRadians(180)),
-                                new Pose(53.704, 85.595, Math.toRadians(144))
+                                new Pose(123.904, 35.672, Math.toRadians(0)),
+                                new Pose(90.296, 85.595, Math.toRadians(36))
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(144))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                 .build();
+
         leavePath = follower
                 .pathBuilder()
-                        .addPath(
-
-                                new BezierLine(
-                                        new Pose (53.704, 85.595, Math.toRadians(144)),
-                                        new Pose (48,72, Math.toRadians(144))
-                                )
-
-                                )
-                .setConstantHeadingInterpolation(Math.toRadians(144))
+                .addPath(
+                        new BezierLine(
+                                new Pose(90.296, 85.595, Math.toRadians(36)),
+                                new Pose(96, 72, Math.toRadians(36))
+                        )
+                )
+                .setConstantHeadingInterpolation(Math.toRadians(36))
                 .build();
+
 
 
 
@@ -194,7 +198,7 @@ public class Blue15CloseAuto extends OpMode {
                 actionTimer.resetTimer();
                 robot.setTurretTrackingActive(true);
                 shooterActive = true;
-                robot.UpdateTarget(2,144);
+                robot.UpdateTarget(138,146);
 
                 follower.followPath(shoot1Path, false);
 
@@ -219,7 +223,7 @@ public class Blue15CloseAuto extends OpMode {
                 if (actionTimer.getElapsedTimeSeconds() > 2.5) {
                     // Start pickup path
                     follower.followPath(pickup1Path, false);
-                    robot.UpdateTarget(-8,141);
+                    robot.UpdateTarget(140,150);
 
                     // Schedule intake ONCE
                     CommandManager.INSTANCE.scheduleCommand(
@@ -275,7 +279,7 @@ public class Blue15CloseAuto extends OpMode {
                 if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.25) {
                     // Start shoot path
                     follower.followPath(shoot3Path, true);
-                    robot.UpdateTarget(-8, 138);
+                    robot.UpdateTarget(148, 150);
 
                     actionTimer.resetTimer();
                     pathState = 7;
@@ -361,7 +365,7 @@ public class Blue15CloseAuto extends OpMode {
 
 
 
-        }
+    }
 }
 
 
