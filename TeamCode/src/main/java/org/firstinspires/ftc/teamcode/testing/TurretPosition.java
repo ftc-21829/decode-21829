@@ -20,7 +20,7 @@ public class TurretPosition extends OpMode {
     private double maxVoltage = 2.5;
     private double minRad = -Math.PI;
     private double maxRad = Math.PI;
-    public static double kp = 0.00525;
+    public static double kp = 0.00540;
     public static double ki = 0;
     public static double kd = 0.000025;
     public static double target = 0;

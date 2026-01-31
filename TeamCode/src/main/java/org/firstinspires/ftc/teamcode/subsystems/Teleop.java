@@ -6,6 +6,8 @@ import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.rowanmcalpin.nextftc.core.command.Command;
@@ -22,6 +24,7 @@ import org.firstinspires.ftc.teamcode.testing.DriveTrainFloat;
 @TeleOp(name = "TeleopBlue")
 public class Teleop extends OpMode {
     AllMechCopy robot;
+    public DcMotor leftFront, leftBack, rightFront, rightBack;
     boolean Outtake;
     Gamepad currentGamepad1, previousGamepad1, currentGamepad2, previousGamepad2;
     private final FtcDashboard dash = FtcDashboard.getInstance();
@@ -29,13 +32,7 @@ public class Teleop extends OpMode {
     private int lastHighPos = 0;
     private long lastTime = 0;
     private double currentVelocity = 0.0;
-    private double manualXOffset = 0.0;
-    private double manualYOffset = 0.0;
-    public static double ADJUSTMENT_STEP = 0.5;
 
-    private double manualXOffset = 0.0;
-    private double manualYOffset = 0.0;
-    private double ADJUSTMENT_STEP = 2;
 
 
 
@@ -46,6 +43,19 @@ public class Teleop extends OpMode {
 
         DriveTrainFloat.setToFloatMode(hardwareMap);
         robot.follower.setStartingPose(new Pose(PoseStorage.x, PoseStorage.y, PoseStorage.heading));
+
+
+        rightFront = hardwareMap.get(DcMotor.class, "front right");
+        leftBack = hardwareMap.get(DcMotor.class, "back left");
+
+        rightBack = hardwareMap.get(DcMotor.class, "back right");
+
+        leftFront = hardwareMap.get(DcMotor.class, "front left");
+
+        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
 
         currentGamepad1 = new Gamepad();
         currentGamepad2 = new Gamepad();
@@ -64,7 +74,6 @@ public class Teleop extends OpMode {
 
     @Override
     public void start(){
-        robot.follower.startTeleopDrive();
     }
 
     @Override
@@ -76,14 +85,25 @@ public class Teleop extends OpMode {
         currentGamepad1.copy(gamepad1);
         currentGamepad2.copy(gamepad2);
         robot.follower.update();
-//s
+
         calculateShooterVelocity();
 
         double y = -gamepad2.left_stick_y;
-        double x = -gamepad2.left_stick_x * 1.1;
-        double rx = -gamepad2.right_stick_x;
+        double x = gamepad2.left_stick_x * 1.1;
+        double rx = gamepad2.right_stick_x;
+//
+//        robot.follower.setTeleOpDrive(y, x, rx, true);
+        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+        double frontLeftPower = (y + x + rx) / denominator;
+        double backLeftPower = (y - x + rx) / denominator;
+        double frontRightPower = (y - x - rx) / denominator;
+        double backRightPower = (y + x - rx) / denominator;
 
-        robot.follower.setTeleOpDrive(y, x, rx, true);
+        leftFront.setPower(frontLeftPower);
+        rightFront.setPower(frontRightPower);
+        leftBack.setPower(backLeftPower);
+        rightBack.setPower(backRightPower);
+
 
         // Update Limelight
         robot.updateLimelightData();
@@ -105,10 +125,14 @@ public class Teleop extends OpMode {
         }
 
         if(gamepad1.dpadRightWasPressed()){
-            manualXOffset += ADJUSTMENT_STEP;
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.intakeOn()
+            );
         }
         if(gamepad1.dpadLeftWasPressed()){
-            manualXOffset -= ADJUSTMENT_STEP;
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.intakeOff()
+            );
         }
         if(gamepad1.dpadUpWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
@@ -116,14 +140,14 @@ public class Teleop extends OpMode {
             );
         }
         if (gamepad1.rightBumperWasPressed()){
-
-            manualYOffset += ADJUSTMENT_STEP;
-
-
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.transferfull()
+            );
         }
         if(gamepad1.leftBumperWasPressed()){
-            manualYOffset -= ADJUSTMENT_STEP;
-
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.transferOff()
+            );
         }
         if(gamepad1.triangleWasPressed()){
             Outtake = true;
@@ -168,9 +192,9 @@ public class Teleop extends OpMode {
         }
 
         if(robotPose.getY()<60){
-            robot.UpdateTarget(-3 + manualXOffset,144 + manualYOffset);
+            robot.UpdateTarget(-3 ,144 );
         } else {
-            robot.UpdateTarget(-3 + manualXOffset,144 + manualYOffset); // 0,148
+            robot.UpdateTarget(-3 ,144 ); // 0,148
         }
 
 

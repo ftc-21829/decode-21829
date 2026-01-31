@@ -39,7 +39,7 @@ public class AllMechCopy {
     public Follower follower;
     public ColorSensor colorSensor, colorSensorFront, colorSensorBack;
 
-    public Servo door, hood, buttkicker;
+    public Servo door, hood, buttkicker, servoStop;
     public CRServo turretServo;
 
     public Limelight3A limelight;
@@ -107,10 +107,12 @@ public class AllMechCopy {
     private double targetHoodPosition = 0;
 
     // ========== SERVO POSITIONS ==========
-    public static double door_open_pos = 0.75;
-    public static double door_close_pos = 0.6;
+    public static double door_open_pos = 0.3;
+    public static double door_close_pos = 0.2;
     public static double butt_kicker_down = 0.88;
     public static double butt_kicker_up = 0.4725;
+    public static double servo_not_jam_pos = 0.215;
+    public static double servo_jam_pos = 0.1;
 
     // ========== SHOOTER TUNING ==========
     private final double HOOD_A = 0.234833;
@@ -127,7 +129,7 @@ public class AllMechCopy {
     private boolean prevDpadUp = false;
     private boolean prevDpadDown = false;
     private boolean prevLogButton = false;
-    public static double kps = 0.0053; //0.00515
+    public static double kps = 0.00515; //0.00515
     public static double kis = 0.0001; //0
     public static double kds = 0.0000007; //0.0000005
 
@@ -170,6 +172,8 @@ public class AllMechCopy {
         door = hardwareMap.get(Servo.class, "door");
         door.setPosition(door_open_pos);
         hood = hardwareMap.get(Servo.class, "hood");
+        servoStop = hardwareMap.get(Servo.class, "servoStop");
+        servoStop.setPosition(servo_not_jam_pos);
         buttkicker = hardwareMap.get(Servo.class, "buttkicker");
         buttkicker.setPosition(butt_kicker_down);
 
@@ -481,6 +485,12 @@ public class AllMechCopy {
         return new InstantCommand(() -> transfer.setPower(1));
 
     }
+    public Command servoJam(){
+        return new InstantCommand(()-> servoStop.setPosition(servo_jam_pos));
+    }
+    public Command servoDownJam(){
+        return new InstantCommand(()-> servoStop.setPosition(servo_not_jam_pos));
+    }
 
     public Command transferReverse() {
 
@@ -524,7 +534,8 @@ public class AllMechCopy {
                     return distanceCmFront > 6.5 && distanceCmBack > 6.5;
                 }).then(
                         new SequentialGroup(
-                                new Delay(0.15),
+                                servoDownJam(),
+                                new Delay(0.25),
                                 ButtKicker()
 
                         )
@@ -543,9 +554,24 @@ public class AllMechCopy {
                         transferfull(),
                         doorOpen(),
                         intakeOn()
-                ),
-                new Delay(1.5),
-                ButtKicker(),
+                ), new WaitUntil(()->{
+            double distanceCmFront = 100;
+            double distanceCmBack = 100;
+            if(colorSensorFront instanceof DistanceSensor){
+                distanceCmFront = ((DistanceSensor) colorSensorFront).getDistance(DistanceUnit.CM);}
+            if(colorSensorBack instanceof DistanceSensor){
+                distanceCmBack = ((DistanceSensor) colorSensorBack).getDistance(DistanceUnit.CM);}
+
+            return distanceCmFront > 6.85 && distanceCmBack > 6.85;
+        }).then(
+                new SequentialGroup(
+                        servoDownJam(),
+                        new Delay(0.5),
+                        ButtKicker()
+
+                )
+
+        ),
                 new ParallelGroup(
                         intakeOff(),
                         transferOff(),
@@ -620,9 +646,15 @@ public class AllMechCopy {
             return distanceCm < 1.0;
         }).then(
 
-                new ParallelGroup(
-                        doorClose(),
-                        transferReverse()
+                new SequentialGroup(
+                        new ParallelGroup(
+                                doorClose(),
+                                new SequentialGroup(
+                                        new Delay(0.5),
+                                        transferOff())
+                        ),
+                        new Delay(1.2),
+                        servoJam()
                 )
 
         );
@@ -636,9 +668,15 @@ public class AllMechCopy {
             return distanceCm < 1.0;
         }).then(
 
-                new ParallelGroup(
-                        doorClose(),
-                        transferReverseAuto()
+                new SequentialGroup(
+                        new ParallelGroup(
+                                doorClose(),
+                                new SequentialGroup(
+                                        new Delay(0.5),
+                                        transferOff())
+                        ),
+                        new Delay(1.25),
+                        servoJam()
                 )
 
         );
@@ -664,12 +702,14 @@ public class AllMechCopy {
                     if(colorSensorBack instanceof DistanceSensor){
                         distanceCmBack = ((DistanceSensor) colorSensorBack).getDistance(DistanceUnit.CM);}
 
-                    return distanceCmFront < 7 && distanceCmBack < 7; // 6.25
+                    return distanceCmFront < 6.25 && distanceCmBack < 6.25; // 6.25
                 }).then(
-                        new ParallelGroup(
+                        new SequentialGroup(
+                                new Delay(1),
                                 intakeOff(),
-                                transferOff()
-                        )
+                                servoDownJam(),
+                                new InstantCommand(()-> gamepad1.rumble(500))
+                                )
 
                 )
         );
@@ -690,9 +730,10 @@ public class AllMechCopy {
 
                     return distanceCmFront < 7 && distanceCmBack < 7; // 6.25
                 }).then(
-                        new ParallelGroup(
+                        new SequentialGroup(
                                 intakeOff(),
-                                transferOff()
+                                servoDownJam()
+
                         )
 
                 )
@@ -714,11 +755,11 @@ public class AllMechCopy {
 
     public double computeShooterTargetVelocityFromDistance(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
-        shooterTargetVelocity = 0.00000366362 * Math.pow(distanceMM, 4)
-                - 0.0016287 * Math.pow(distanceMM,3)
-                + 0.250495 * Math.pow(distanceMM, 2)
-                - 9.94307 * distanceMM
-                + 990.09792;
+        shooterTargetVelocity = 0.00000224959 * Math.pow(distanceMM, 4)
+                - 0.000959396 * Math.pow(distanceMM,3)
+                + 0.14656 * Math.pow(distanceMM, 2)
+                - 3.56365 * distanceMM
+                + 863.84388;
         return shooterTargetVelocity;
     }
 

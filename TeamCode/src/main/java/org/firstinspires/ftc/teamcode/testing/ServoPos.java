@@ -10,9 +10,9 @@ import com.qualcomm.robotcore.hardware.Servo;
 @TeleOp(name = "ServoTesting", group = "testing")
 public class ServoPos extends OpMode {
     public DcMotor outtakeLow, outtakeHigh, intake, transfer;
-    public Servo hood, door, buttkicker;
-    public static double door_open_pos = 0.75;
-    public static double door_close_pos = 0.6;
+    public Servo hood, door, buttkicker,servoStop;
+    public static double door_open_pos = 0.3;
+    public static double door_close_pos = 0.2;
     public static double servo_far_pos = 0.35;
     public static double servo_middle_pos = 0.3;
     public static double servo_close_pos = 0.15;
@@ -20,6 +20,8 @@ public class ServoPos extends OpMode {
     public static double motor_power = 1;
     public static double transfer_pos_up = 1;
     public static double transfer_pos_down = 0;
+    public static double servo_stop_down = 0.215;
+    public static double servo_stop_up = 0.1;
     public static double butt_kicker_down = 0.84;
     public static double butt_kicker_up = 0.4675;
 
@@ -34,6 +36,7 @@ public class ServoPos extends OpMode {
         buttkicker = hardwareMap.get(Servo.class, "buttkicker");
         door = hardwareMap.get(Servo.class, "door");
         hood = hardwareMap.get(Servo.class, "hood");
+        servoStop = hardwareMap.get(Servo.class, "servoStop");
 
 
 
@@ -74,11 +77,23 @@ public class ServoPos extends OpMode {
 //        if(gamepad1.cross){
 //            door.setPosition(door_close_pos);
 //        }
+        if(gamepad1.dpad_left) {
+            door.setPosition(door_close_pos);
+        }
+        if(gamepad1.dpad_right) {
+            door.setPosition(door_open_pos);
+        }
         if(gamepad1.right_bumper) {
             buttkicker.setPosition(butt_kicker_down);
         }
         if(gamepad1.left_bumper) {
             buttkicker.setPosition(butt_kicker_up);
+        }
+        if(gamepad1.dpad_down) {
+            servoStop.setPosition(servo_stop_down);
+        }
+        if(gamepad1.dpad_up) {
+            servoStop.setPosition(servo_stop_up);
         }
     }
 }
