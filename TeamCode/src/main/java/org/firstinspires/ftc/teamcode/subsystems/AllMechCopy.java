@@ -80,6 +80,9 @@ public class AllMechCopy {
 
     // AprilTag pose fusion weight (0.0 = trust odometry only, 1.0 = trust AprilTag only)
     public static double APRILTAG_FUSION_WEIGHT = 0.2;
+    public static double TURRET_STABLE_THRESHOLD_DEG = 10; // degrees
+    public static double LIMELIGHT_ERROR_THRESHOLD = 5.0;   // degrees
+    public static double TARGET_ADJUST_DISTANCE = 2.0;      // inches
 
     // ========== SHOOTER PID ==========
     private double shooter_kP = 0.005;
@@ -105,6 +108,8 @@ public class AllMechCopy {
 
     public double shooterTargetVelocity = 0;
     private double targetHoodPosition = 0;
+    private boolean targetAdjusted = false;
+
 
     // ========== SERVO POSITIONS ==========
     public static double door_open_pos = 0.3;
@@ -145,7 +150,7 @@ public class AllMechCopy {
 
 
 
-        axon.setMaxPower(0.85);
+        axon.setMaxPower(1);
         colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
         colorSensorFront = hardwareMap.get(ColorSensor.class, "colorSensorFront");
         colorSensorBack = hardwareMap.get(ColorSensor.class, "colorSensorBack");
@@ -210,6 +215,48 @@ public class AllMechCopy {
             updatePoseFromAprilTag();
         }
     }
+    private boolean isTurretStable() {
+        double turretError =
+                Math.abs(axon.getTargetRotation() - axon.getTotalRotation());
+        return turretError < TURRET_STABLE_THRESHOLD_DEG;
+    }
+    public void adaptiveNudgeTargetFromLimelight(double leftBiasDegrees) {
+        if (!hasValidTarget()) return;
+        if (!isTurretStable()) return;
+
+        double txDeg = currentResult.getTx();
+
+        // Add left bias: positive degrees = move robot/turret left
+        txDeg += leftBiasDegrees;
+
+        if (Math.abs(txDeg) < LIMELIGHT_ERROR_THRESHOLD) return;
+
+        Pose robotPose = follower.getPose();
+
+        // Distance to target using Pinpoint
+        double dx = TARGET_X - robotPose.getX();
+        double dy = TARGET_Y - robotPose.getY();
+        double distanceInches = Math.hypot(dx, dy);
+        if (distanceInches <= 0) return;
+
+        // Convert adjusted Limelight angular error to lateral error
+        double txRad = Math.toRadians(txDeg);
+        double lateralErrorInches = distanceInches * Math.tan(txRad);
+
+        // Direction perpendicular to line of sight
+        double angleToTarget = Math.atan2(dy, dx);
+        double perpAngle = angleToTarget + Math.PI / 2.0;
+
+        double sign = Math.signum(txDeg);
+
+        TARGET_X += Math.cos(perpAngle) * lateralErrorInches * sign;
+        TARGET_Y += Math.sin(perpAngle) * lateralErrorInches * sign;
+    }
+
+
+
+
+
     private double calculateFieldRelativeTurretError() {
         Pose robotPose = follower.getPose();
 
@@ -269,22 +316,10 @@ public class AllMechCopy {
             return;
         }
 
-        // Limelight path intentionally unchanged
     }
 
 
     private void updatePoseFromAprilTag() {
-        // TODO: Implement AprilTag pose fusion for continuous pose correction
-        // This would involve:
-        // 1. Getting the AprilTag's known field position
-        // 2. Using botpose or camera-to-target transform to calculate robot pose
-        // 3. Fusing with Pinpoint odometry using APRILTAG_FUSION_WEIGHT
-
-        // Example skeleton:
-        // Pose aprilTagPose = getAprilTagPoseFromLimelight(currentResult);
-        // Pose odometryPose = follower.getPose();
-        // Pose fusedPose = blendPoses(odometryPose, aprilTagPose, APRILTAG_FUSION_WEIGHT);
-        // follower.setPose(fusedPose);
     }
 
     public boolean hasValidTarget() {
@@ -403,68 +438,6 @@ public class AllMechCopy {
         output = Math.max(-turret_max_power, Math.min(turret_max_power, output));
         axon.setPower(output);
     }
-//    public void updateTurretTracking() {
-//        if (!turretTrackingActive) {
-//            axon.setPower(0.0);
-//            return;
-//        }
-//
-//        // ================= FIELD RELATIVE =================
-//        if (USE_FIELD_RELATIVE_TRACKING) {
-//            axon.setRtp(true);
-//
-//            double errorDegrees = calculateFieldRelativeTurretError();
-//
-//            // Get current tracking error from RTP
-//            double currentError = axon.getTargetRotation() - axon.getTotalRotation();
-//
-//            // Calculate how much to adjust target (smooth tracking)
-//            double adjustment = errorDegrees - currentError;
-//
-//            // Only adjust if significant change
-//            if (Math.abs(adjustment) > 0.5) {
-//                axon.changeTargetRotation(adjustment);
-//            }
-//
-//            axon.update();
-//
-//            telemetry.addData("Field Error", "%.2f°", errorDegrees);
-//            telemetry.addData("RTP Error", "%.2f°", currentError);
-//            telemetry.addData("Total Rotation", "%.2f°", axon.getTotalRotation());
-//
-//            return;
-//        }
-//
-//        // ... rest of code
-//
-//
-//        // ================= LIMELIGHT =================
-//        axon.setRtp(false);
-//
-//        if (!hasValidTarget()) {
-//            axon.setPower(0.0);
-//            return;
-//        }
-//
-//        double error = currentResult.getTx();
-//
-//        if (Math.abs(error) < turret_deadband) {
-//            axon.setPower(0.0);
-//            integral = 0.0;
-//            lastError = 0.0;
-//            return;
-//        }
-//
-//        integral += error;
-//        integral = Math.max(-100.0, Math.min(100.0, integral));
-//        double derivative = error - lastError;
-//        double output = (turret_kP * error) + (turret_kI * integral) + (turret_kD * derivative);
-//        output = -output;
-//        lastError = error;
-//
-//        output = Math.max(-turret_max_power, Math.min(turret_max_power, output));
-//        axon.setPower(output);
-//    }
 
 
     public boolean isTurretAligned() {
@@ -518,6 +491,7 @@ public class AllMechCopy {
     public Command OuttakeOne(){
         return new SequentialGroup(
                 new ParallelGroup(
+                        servoDownJam(),
                         transferfull(),
                         doorOpen(),
                         intakeOn()
@@ -534,7 +508,6 @@ public class AllMechCopy {
                     return distanceCmFront > 6.5 && distanceCmBack > 6.5;
                 }).then(
                         new SequentialGroup(
-                                servoDownJam(),
                                 new Delay(0.25),
                                 ButtKicker()
 
@@ -551,6 +524,7 @@ public class AllMechCopy {
     public Command OuttakeOneAuto(){
         return new SequentialGroup(
                 new ParallelGroup(
+                        servoDownJam(),
                         transferfull(),
                         doorOpen(),
                         intakeOn()
@@ -565,7 +539,6 @@ public class AllMechCopy {
             return distanceCmFront > 6.85 && distanceCmBack > 6.85;
         }).then(
                 new SequentialGroup(
-                        servoDownJam(),
                         new Delay(0.5),
                         ButtKicker()
 
@@ -650,11 +623,12 @@ public class AllMechCopy {
                         new ParallelGroup(
                                 doorClose(),
                                 new SequentialGroup(
-                                        new Delay(0.5),
-                                        transferOff())
-                        ),
-                        new Delay(1.2),
-                        servoJam()
+                                        new Delay(0.3),
+                                        transferOff(),
+                                        servoJam()
+                                )
+                        )
+
                 )
 
         );
@@ -672,11 +646,12 @@ public class AllMechCopy {
                         new ParallelGroup(
                                 doorClose(),
                                 new SequentialGroup(
-                                        new Delay(0.5),
-                                        transferOff())
-                        ),
-                        new Delay(1.25),
-                        servoJam()
+                                        new Delay(0.3),
+                                        transferOff(),
+                                        servoJam()
+                                )
+                        )
+
                 )
 
         );
@@ -705,10 +680,11 @@ public class AllMechCopy {
                     return distanceCmFront < 6.25 && distanceCmBack < 6.25; // 6.25
                 }).then(
                         new SequentialGroup(
+                                new InstantCommand(()-> gamepad2.rumble(500)),
+                                new InstantCommand(()-> gamepad1.rumble(500)),
                                 new Delay(1),
                                 intakeOff(),
-                                servoDownJam(),
-                                new InstantCommand(()-> gamepad1.rumble(500))
+                                servoDownJam()
                                 )
 
                 )
@@ -731,6 +707,7 @@ public class AllMechCopy {
                     return distanceCmFront < 7 && distanceCmBack < 7; // 6.25
                 }).then(
                         new SequentialGroup(
+                                new Delay(0.8),
                                 intakeOff(),
                                 servoDownJam()
 

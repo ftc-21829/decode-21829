@@ -254,7 +254,7 @@ public class Red12CloseGate extends OpMode {
                 break; // ✅
             case 4:
                 // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
                     // Start shoot path
                     follower.followPath(shoot2Path, false);
 
@@ -294,7 +294,7 @@ public class Red12CloseGate extends OpMode {
                 break; // ✅
             case 7:
                 // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.25) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
                     // Start shoot path
                     follower.followPath(shoot3Path, false);
                     robot.UpdateTarget(148, 150);
@@ -335,7 +335,7 @@ public class Red12CloseGate extends OpMode {
                 break; // ✅
             case 10:
                 // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
                     // Start shoot path
                     follower.followPath(shoot4Path, false);
 
@@ -361,7 +361,7 @@ public class Red12CloseGate extends OpMode {
                 }
                 break; // ✅
             case 12:
-                if (actionTimer.getElapsedTimeSeconds() > 1.5) {
+                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
                     follower.followPath(leavePath);
                     pathState = 13; // Done
                 }

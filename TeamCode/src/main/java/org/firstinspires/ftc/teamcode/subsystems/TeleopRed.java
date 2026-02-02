@@ -101,27 +101,25 @@ public class TeleopRed extends OpMode {
             telemetry.addData("Status", "NO TARGET");
         }
 
+
+
         if(gamepad1.dpadRightWasPressed()){
-            manualXOffset += ADJUSTMENT_STEP;
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.intakeOn()
+            );
         }
         if(gamepad1.dpadLeftWasPressed()){
-            manualXOffset -= ADJUSTMENT_STEP;
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.intakeOff()
+            );
         }
+
         if(gamepad1.dpadUpWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.intakeAndTransfer()
             );
         }
-        if (gamepad1.rightBumperWasPressed()){
 
-            manualYOffset += ADJUSTMENT_STEP;
-
-
-        }
-        if(gamepad1.leftBumperWasPressed()){
-            manualYOffset -= ADJUSTMENT_STEP;
-
-        }
         if(gamepad1.triangleWasPressed()){
             Outtake = true;
 
@@ -167,7 +165,7 @@ public class TeleopRed extends OpMode {
         if(robotPose.getY()<60){
             robot.UpdateTarget(138.5 + manualXOffset,152 + manualYOffset);
         } else {
-            robot.UpdateTarget(141.5 + manualXOffset,148 + manualYOffset); // 0,148
+            robot.UpdateTarget(144 + manualXOffset,148 + manualYOffset); // 0,148
         }
 
 

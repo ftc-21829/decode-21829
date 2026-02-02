@@ -291,7 +291,7 @@ public class Blue12CloseGate extends OpMode {
                 break; // ✅
             case 7:
                 // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.45) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
                     // Start shoot path
                     follower.followPath(shoot3Path, false);
                     robot.UpdateTarget(-10.5, 133.5);
@@ -332,7 +332,7 @@ public class Blue12CloseGate extends OpMode {
                 break; // ✅
             case 10:
                 // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
                     // Start shoot path
                     follower.followPath(shoot4Path, false);
 
@@ -359,7 +359,7 @@ public class Blue12CloseGate extends OpMode {
                 }
                 break; // ✅
             case 12:
-                if (actionTimer.getElapsedTimeSeconds() > 1.5) {
+                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
                     follower.followPath(leavePath);
                     pathState = 13; // Done
                 }
@@ -383,6 +383,3 @@ public class Blue12CloseGate extends OpMode {
 
     }
 }
-
-
-
