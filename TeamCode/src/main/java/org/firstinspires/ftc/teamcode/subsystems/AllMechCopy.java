@@ -116,8 +116,8 @@ public class AllMechCopy {
     public static double door_close_pos = 0.2;
     public static double butt_kicker_down = 0.88;
     public static double butt_kicker_up = 0.4725;
-    public static double servo_not_jam_pos = 0.215;
-    public static double servo_jam_pos = 0.1;
+    public static double servo_not_jam_pos = 0.18;
+    public static double servo_jam_pos = 0.03;
 
     // ========== SHOOTER TUNING ==========
     private final double HOOD_A = 0.234833;
@@ -483,6 +483,19 @@ public class AllMechCopy {
         );
 
     }
+    public Command intakeOut() {
+
+        return new SequentialGroup(
+                servoJam(),
+                new InstantCommand(() -> intake.setPower(-0.5)),
+                new Delay(0.5),
+                intakeOn(),
+                new Delay(0.5),
+                intakeOff(),
+                servoDownJam()
+        );
+
+    }
 
 
     public Command transferSlow() { return new InstantCommand(() -> transfer.setPower(0.75)); }
@@ -645,10 +658,10 @@ public class AllMechCopy {
                 new SequentialGroup(
                         new ParallelGroup(
                                 doorClose(),
+                                servoJam(),
+
                                 new SequentialGroup(
-                                        new Delay(0.3),
-                                        transferOff(),
-                                        servoJam()
+                                        transferOff()
                                 )
                         )
 
@@ -682,12 +695,24 @@ public class AllMechCopy {
                         new SequentialGroup(
                                 new InstantCommand(()-> gamepad2.rumble(500)),
                                 new InstantCommand(()-> gamepad1.rumble(500)),
-                                new Delay(1),
                                 intakeOff(),
                                 servoDownJam()
                                 )
 
                 )
+        );
+    }
+    public Command intakejamstop(){
+
+        return new SequentialGroup(
+                servoJam(),
+                new Delay(0.5),
+                intakeOn(),
+                new Delay(1),
+                intakeOff(),
+                servoDownJam()
+
+
         );
     }
     public Command intakeAndTransferAuto() {
@@ -704,12 +729,14 @@ public class AllMechCopy {
                     if(colorSensorBack instanceof DistanceSensor){
                         distanceCmBack = ((DistanceSensor) colorSensorBack).getDistance(DistanceUnit.CM);}
 
-                    return distanceCmFront < 7 && distanceCmBack < 7; // 6.25
+                    return distanceCmFront < 6.5 && distanceCmBack < 6.5; // 6.25
                 }).then(
                         new SequentialGroup(
-                                new Delay(0.8),
+                                new Delay(0.7),
                                 intakeOff(),
+                                new Delay(0.3),
                                 servoDownJam()
+
 
                         )
 
@@ -723,14 +750,43 @@ public class AllMechCopy {
 
     public double computeHoodPositionFromDistance(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
-        return 2.02634* Math.pow(10,-8) * Math.pow(distanceMM, 4)
-                - 0.00000921217 * Math.pow(distanceMM,3)
-                + 0.00141671 * Math.pow(distanceMM,2)
-                - 0.0779454 * distanceMM
-                + 1.39711;
+        return 3.23818 * Math.pow(10,-8) * Math.pow(distanceMM, 4)
+                - 0.0000141444 * Math.pow(distanceMM,3)
+                + 0.00217027 * Math.pow(distanceMM, 2)
+                - 0.130161 * distanceMM
+                + 2.67178;
+//        return 2.02634* Math.pow(10,-8) * Math.pow(distanceMM, 4)
+//                - 0.00000921217 * Math.pow(distanceMM,3)
+//                + 0.00141671 * Math.pow(distanceMM,2)
+//                - 0.0779454 * distanceMM
+//                + 1.39711;
+
     }
 
     public double computeShooterTargetVelocityFromDistance(double distanceMM) {
+        if (distanceMM <= 0) return 0.0;
+        shooterTargetVelocity = -(9.31459 * Math.pow(10, -7)) * Math.pow(distanceMM, 4)
+                + 0.000561091 * Math.pow(distanceMM,3)
+                - 0.113304 * Math.pow(distanceMM, 2)
+                + 13.97627 * distanceMM
+                + 474.37208;
+//        shooterTargetVelocity = 0.00000224959 * Math.pow(distanceMM, 4)
+//                - 0.000959396 * Math.pow(distanceMM,3)
+//                + 0.14656 * Math.pow(distanceMM, 2)
+//                - 3.56365 * distanceMM
+//                + 843.84388;
+        return shooterTargetVelocity;
+    }
+    public double computeShooterTargetVelocityFromDistanceRedTele(double distanceMM) {
+        if (distanceMM <= 0) return 0.0;
+        shooterTargetVelocity = 0.00000224959 * Math.pow(distanceMM, 4)
+                - 0.000959396 * Math.pow(distanceMM,3)
+                + 0.14656 * Math.pow(distanceMM, 2)
+                - 3.56365 * distanceMM
+                + 913.84388;
+        return shooterTargetVelocity;
+    }
+    public double computeShooterTargetVelocityFromDistanceRedAuto(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
         shooterTargetVelocity = 0.00000224959 * Math.pow(distanceMM, 4)
                 - 0.000959396 * Math.pow(distanceMM,3)
@@ -752,6 +808,30 @@ public class AllMechCopy {
         }
 
     }
+    public void updateShooterTargetFromFieldRed() {
+        Pose robotPose = follower.getPose();
+
+        double dmm = distance(robotPose.getX(), robotPose.getY());
+        if (dmm > 0) {
+            lastValidDistanceMM = dmm;
+            targetHoodPosition = computeHoodPositionFromDistance(dmm);
+            targetOuttakePower = computeShooterTargetVelocityFromDistanceRedTele(dmm);
+            shooterEnabled = true;
+        }
+
+    }
+    public void updateShooterTargetFromFieldRedAuto() {
+        Pose robotPose = follower.getPose();
+
+        double dmm = distance(robotPose.getX(), robotPose.getY());
+        if (dmm > 0) {
+            lastValidDistanceMM = dmm;
+            targetHoodPosition = computeHoodPositionFromDistance(dmm);
+            targetOuttakePower = computeShooterTargetVelocityFromDistanceRedAuto(dmm);
+            shooterEnabled = true;
+        }
+
+    }
     private double shooterFeedforward(double targetVel) {
         if (Math.abs(targetVel) < 1e-6) return 0.0;
         return shooter_kS * Math.signum(targetVel) + shooter_kV * targetVel;
@@ -769,6 +849,96 @@ public class AllMechCopy {
     /** Apply PID-controlled flywheel velocity and hood position */
     public void periodicShooterUpdateAndApplyPID() {
         updateShooterTargetFromField();
+        if (!shooterEnabled) return;
+
+        int lowPos = outtakeLow.getCurrentPosition();
+        int highPos = outtakeHigh.getCurrentPosition();
+        long now = System.nanoTime();
+        double dt = (now - lastTimePID) / 1e9;
+
+        if (dt <= 0) return;
+
+        double lowVel = (lowPos - lastLowPosPID) / dt;
+        double highVel = (highPos - lastHighPosPID) / dt;
+        double currentVel = (lowVel + highVel) / 2.0;
+        // ---- Shot detection (velocity drop) ----
+        long nowTime = System.nanoTime();
+        if (lastShooterVel - currentVel > SHOT_VEL_DROP &&
+                nowTime - lastShotTime > SHOT_COOLDOWN_NS) {
+
+            onShotDetected();
+        }
+        lastShooterVel = currentVel;
+
+
+        lastLowPosPID = lowPos;
+        lastHighPosPID = highPos;
+        lastTimePID = now;
+
+        // ---- FEEDFORWARD + P CONTROL ----
+        double ff = shooterFeedforward(shooterTargetVelocity);
+        double fb = shooterFeedback(shooterTargetVelocity, currentVel);
+        // ---- Hood recovery when velocity stabilizes ----
+        double velError = shooterTargetVelocity - currentVel;
+        if (Math.abs(velError) < 150) {
+            hoodComp *= 0.85;
+            if (hoodComp < 0.06) hoodComp = 0;
+        }
+
+        double power = ff + fb;
+        power = clamp(power, 0.0, 0.9);
+
+        outtakeLow.setPower(power);
+        outtakeHigh.setPower(power);
+        hood.setPosition(Math.max(0, Math.min(targetHoodPosition, 0.8)));
+    }
+    public void periodicShooterUpdateAndApplyPIDRed() {
+        updateShooterTargetFromFieldRed();
+        if (!shooterEnabled) return;
+
+        int lowPos = outtakeLow.getCurrentPosition();
+        int highPos = outtakeHigh.getCurrentPosition();
+        long now = System.nanoTime();
+        double dt = (now - lastTimePID) / 1e9;
+
+        if (dt <= 0) return;
+
+        double lowVel = (lowPos - lastLowPosPID) / dt;
+        double highVel = (highPos - lastHighPosPID) / dt;
+        double currentVel = (lowVel + highVel) / 2.0;
+        // ---- Shot detection (velocity drop) ----
+        long nowTime = System.nanoTime();
+        if (lastShooterVel - currentVel > SHOT_VEL_DROP &&
+                nowTime - lastShotTime > SHOT_COOLDOWN_NS) {
+
+            onShotDetected();
+        }
+        lastShooterVel = currentVel;
+
+
+        lastLowPosPID = lowPos;
+        lastHighPosPID = highPos;
+        lastTimePID = now;
+
+        // ---- FEEDFORWARD + P CONTROL ----
+        double ff = shooterFeedforward(shooterTargetVelocity);
+        double fb = shooterFeedback(shooterTargetVelocity, currentVel);
+        // ---- Hood recovery when velocity stabilizes ----
+        double velError = shooterTargetVelocity - currentVel;
+        if (Math.abs(velError) < 150) {
+            hoodComp *= 0.85;
+            if (hoodComp < 0.06) hoodComp = 0;
+        }
+
+        double power = ff + fb;
+        power = clamp(power, 0.0, 0.9);
+
+        outtakeLow.setPower(power);
+        outtakeHigh.setPower(power);
+        hood.setPosition(Math.max(0, Math.min(targetHoodPosition, 0.8)));
+    }
+    public void periodicShooterUpdateAndApplyPIDRedAuto() {
+        updateShooterTargetFromFieldRedAuto();
         if (!shooterEnabled) return;
 
         int lowPos = outtakeLow.getCurrentPosition();

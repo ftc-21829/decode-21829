@@ -43,6 +43,7 @@ public class Blue12CloseGate extends OpMode {
         PoseStorage.x = 20.67;
         PoseStorage.y = 122.855;
         PoseStorage.heading = Math.toRadians(144);
+        follower.setMaxPower(1);
 
 
         robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
@@ -68,29 +69,29 @@ public class Blue12CloseGate extends OpMode {
                 .addPath(
                         new BezierLine(
                                 new Pose(53.704, 85.595, Math.toRadians(180)),
-                                new Pose(26.37, 86.124, Math.toRadians(180))
+                                new Pose(24.47, 85.124, Math.toRadians(180))
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-                .setVelocityConstraint(10)
+
+                .setNoDeceleration()
                 .build();
         gatePath = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(26.37, 86.124, Math.toRadians(180)),
+                                new Pose(24.47, 85.124, Math.toRadians(180)),
                                 new Pose(38.38157422512238, 80.09136378466565),
-                                new Pose(16.309298531810772, 75.12495921696577, Math.toRadians(180))
+                                new Pose(15.309298531810772, 72.12495921696577, Math.toRadians(180))
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
-                .setVelocityConstraint(5)
                 .build();
         shoot2Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(16.309298531810772, 75.12495921696577, Math.toRadians(180)),
+                                new Pose(15.309298531810772, 72.12495921696577, Math.toRadians(180)),
                                 new Pose(53.704, 85.595, Math.toRadians(144))
                         )
                 )
@@ -102,18 +103,18 @@ public class Blue12CloseGate extends OpMode {
                         new BezierCurve(
                                 new Pose(53.704, 85.595, Math.toRadians(144)),
                                 new Pose(60.5979, 56.84113),
-                                new Pose(22.859, 55.863, Math.toRadians(180))
+                                new Pose(23.059, 56.363, Math.toRadians(180))
 
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(180))
-                .setVelocityConstraint(10)
+                .setVelocityConstraint(5)
                 .build();
         shoot3Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(22.359, 55.863, Math.toRadians(180)),
+                                new Pose(23.059, 56.363, Math.toRadians(180)),
                                 new Pose(43.5636, 62.6470),
                                 new Pose(53.704, 85.595, Math.toRadians(144))
 
@@ -127,7 +128,7 @@ public class Blue12CloseGate extends OpMode {
                         new BezierCurve(
                                 new Pose(53.704, 85.595, Math.toRadians(144)),
                                 new Pose(65.0269, 30.0499),
-                                new Pose(19.096, 35.672, Math.toRadians(180))
+                                new Pose(19.596, 35.672, Math.toRadians(180))
 
                         )
                 )
@@ -138,7 +139,7 @@ public class Blue12CloseGate extends OpMode {
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(19.096, 35.672, Math.toRadians(180)),
+                                new Pose(19.596, 35.672, Math.toRadians(180)),
                                 new Pose(53.704, 85.595, Math.toRadians(144))
                         )
                 )
@@ -156,6 +157,8 @@ public class Blue12CloseGate extends OpMode {
                 )
                 .setConstantHeadingInterpolation(Math.toRadians(144))
                 .build();
+
+
 
 
 
@@ -200,7 +203,7 @@ public class Blue12CloseGate extends OpMode {
                 actionTimer.resetTimer();
                 robot.setTurretTrackingActive(true);
                 shooterActive = true;
-                robot.UpdateTarget(-3,150);
+                robot.UpdateTarget(-2,144);
 
                 follower.followPath(shoot1Path, false);
 
@@ -216,16 +219,18 @@ public class Blue12CloseGate extends OpMode {
 
                     );
                     actionTimer.resetTimer();
+
                     pathState = 2;
                 }
                 break; // ✅
 
             case 2:
                 // Wait for outtake to complete
-                if (actionTimer.getElapsedTimeSeconds() > 2.25) {
-                    // Start pickup path
-                    follower.followPath(pickup1Path, false);
-                    robot.UpdateTarget(-9,135.5);
+                if (actionTimer.getElapsedTimeSeconds() > 2.8) {
+                    follower.followPath(pickup1Path,0.7, false);
+                    robot.UpdateTarget(-6,138);
+//                    robot.UpdateTarget(2,148);
+
 
                     // Schedule intake ONCE
                     CommandManager.INSTANCE.scheduleCommand(
@@ -240,7 +245,7 @@ public class Blue12CloseGate extends OpMode {
                 // Wait for outtake to complete
                 if (actionTimer.getElapsedTimeSeconds() > 2.0) {
                     // Start pickup path
-                    follower.followPath(gatePath, true);
+                    follower.followPath(gatePath,0.8, true);
 
                     // Schedule intake ONCE
 
@@ -251,7 +256,7 @@ public class Blue12CloseGate extends OpMode {
                 break; // ✅
             case 4:
                 // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
                     // Start shoot path
                     follower.followPath(shoot2Path, false);
 
@@ -276,9 +281,10 @@ public class Blue12CloseGate extends OpMode {
                 break; // ✅
             case 6:
                 // Wait for outtake to complete
-                if (actionTimer.getElapsedTimeSeconds() > 2.1) {
+                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
                     // Start pickup path
-                    follower.followPath(pickup2Path, false);
+                    follower.followPath(pickup2Path, 0.9, false);
+                    robot.UpdateTarget(-9,137);
 
                     // Schedule intake ONCE
                     CommandManager.INSTANCE.scheduleCommand(
@@ -291,10 +297,11 @@ public class Blue12CloseGate extends OpMode {
                 break; // ✅
             case 7:
                 // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
                     // Start shoot path
                     follower.followPath(shoot3Path, false);
-                    robot.UpdateTarget(-10.5, 133.5);
+                    //                    robot.UpdateTarget(1,148);
+
 
                     actionTimer.resetTimer();
                     pathState = 8;
@@ -318,8 +325,10 @@ public class Blue12CloseGate extends OpMode {
                 // Wait for outtake to complete
                 if (actionTimer.getElapsedTimeSeconds() > 2.5) {
                     // Start pickup path
-                    follower.followPath(pickup3Path, false);
-                    robot.UpdateTarget(-12,134);
+                    follower.followPath(pickup3Path,0.925, false);
+                    robot.UpdateTarget(-11,139);
+//                    robot.UpdateTarget(2,150);
+
 
                     // Schedule intake ONCE
                     CommandManager.INSTANCE.scheduleCommand(
@@ -332,7 +341,7 @@ public class Blue12CloseGate extends OpMode {
                 break; // ✅
             case 10:
                 // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 3.25) {
                     // Start shoot path
                     follower.followPath(shoot4Path, false);
 
@@ -344,7 +353,7 @@ public class Blue12CloseGate extends OpMode {
 
             case 11:
                 // Wait for path to complete AND shooter to spin up
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.45) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.65) {
                     // Shoot the sample
                     CommandManager.INSTANCE.scheduleCommand(
                             new SequentialGroup(
@@ -359,7 +368,7 @@ public class Blue12CloseGate extends OpMode {
                 }
                 break; // ✅
             case 12:
-                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
+                if (actionTimer.getElapsedTimeSeconds() > 2.25) {
                     follower.followPath(leavePath);
                     pathState = 13; // Done
                 }

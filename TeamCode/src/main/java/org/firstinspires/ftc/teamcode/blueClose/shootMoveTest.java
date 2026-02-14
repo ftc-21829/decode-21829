@@ -21,14 +21,16 @@ import org.firstinspires.ftc.teamcode.subsystems.PoseStorage;
 import org.firstinspires.ftc.teamcode.subsystems.TurretPoseStorage;
 import org.firstinspires.ftc.teamcode.testing.DriveTrainFloat;
 
-@Autonomous(name = "gateTest", group = "Autonomous")
+@Autonomous(name = "shootMoveTest", group = "Autonomous")
 @Configurable
-public class gateTest extends OpMode {
+public class shootMoveTest extends OpMode {
     private TelemetryManager panelsTelemetry;
     public Follower follower;
     private int pathState;
     private AllMechCopy robot;
     private Timer actionTimer;
+    private boolean midPathActionFired = false;
+
     private PathChain shoot1Path, pickup1Path, shoot2Path, pickup2Path, shoot3Path, pickup3Path, shoot4Path, leavePath, gatePath, shoot5Path;
     private boolean shooterActive = false; // ADD THIS
 
@@ -206,7 +208,7 @@ public class gateTest extends OpMode {
                 actionTimer.resetTimer();
                 robot.setTurretTrackingActive(true);
                 shooterActive = true;
-                robot.UpdateTarget(0,145);
+                robot.UpdateTarget(0,152);
 
                 follower.followPath(shoot1Path, false);
 
@@ -215,183 +217,185 @@ public class gateTest extends OpMode {
 
             case 1:
                 // Wait for path to complete AND timer
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 3.25) {
-                    // Shoot the preload
+                if (!midPathActionFired && actionTimer.getElapsedTimeSeconds() > 2.0) {
                     CommandManager.INSTANCE.scheduleCommand(
                             robot.OuttakeOne()
                     );
-
-                    actionTimer.resetTimer();
-                    pathState = 2;
+                    midPathActionFired = true;
                 }
-                break; // ✅
-
-            case 2:
-                // Wait for outtake to complete
-                if (actionTimer.getElapsedTimeSeconds() > 2.75) {
-                    // Start pickup path
-                    follower.followPath(pickup1Path, false);
-                    robot.UpdateTarget(-4.5,135.5);
-
-                    // Schedule intake ONCE
-                    CommandManager.INSTANCE.scheduleCommand(
-                            robot.intakeAndTransferAuto()
-                    );
-
-                    actionTimer.resetTimer();
-                    pathState = 3;
-                }
-                break; // ✅
-
-            case 3:
-                // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.65) {
-                    // Start shoot path
-                    follower.followPath(shoot2Path, false);
-
-                    actionTimer.resetTimer();
-                    pathState = 4;
-                }
-                break; // ✅
-
-            case 4:
-                // Wait for path to complete AND shooter to spin up
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
-                    // Shoot the sample
-                    CommandManager.INSTANCE.scheduleCommand(
-                            robot.OuttakeOne()
-
-                    );
-
-                    actionTimer.resetTimer();
-                    pathState = 5;
-                }
-                break; // ✅
-
-
-            case 5:
-                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
-                    follower.followPath(gatePath, true);
-                    CommandManager.INSTANCE.scheduleCommand(
-                            new SequentialGroup(
-                                    robot.intakeAndTransferAuto(),
-                                    new Delay(5)
-                            )
-
-                    );
-
-                    pathState = 6; // Done
-                }
-                break; // ✅
-            case 6:
-                // Wait for final path to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 6.5) {
-                    robot.UpdateTarget(-6, 133.5);
-                    follower.followPath(shoot3Path);
-                    actionTimer.resetTimer();
-                    pathState = 7; // Done
-                }
-                break;
-
-            case 7:
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
-                    // Shoot the sample
-                    CommandManager.INSTANCE.scheduleCommand(
-                            robot.OuttakeOne()
-
-                    );
-
-                    actionTimer.resetTimer();
-                    pathState = 8;
-                }
-                break; // ✅
-            case 8:
-                // Wait for outtake to complete
-                if (actionTimer.getElapsedTimeSeconds() > 2.25) {
-                    // Start pickup path
-                    follower.followPath(pickup2Path, false);
-                    robot.UpdateTarget(-7,133.5);
-
-                    // Schedule intake ONCE
-                    CommandManager.INSTANCE.scheduleCommand(
-                            robot.intakeAndTransferAuto()
-                    );
-
-                    actionTimer.resetTimer();
-                    pathState = 9;
-                }
-                break; // ✅
-            case 9:
-                // Wait for outtake to complete
-                if (actionTimer.getElapsedTimeSeconds() > 2.25) {
-                    // Start pickup path
-                    follower.followPath(shoot4Path, false);
-                    // Schedule intake ONCE
-                    actionTimer.resetTimer();
-                    pathState = 10;
-                }
-                break; // ✅
-            case 10:
-                // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.15) {
-                    // Start shoot path
-                    CommandManager.INSTANCE.scheduleCommand(
-                            robot.OuttakeOne()
-
-                    );
-                    actionTimer.resetTimer();
-                    pathState = 11;
-                }
-                break; // ✅
-            case 11:
-                // Wait for outtake to complete
-                if (actionTimer.getElapsedTimeSeconds() > 2.15) {
-                    // Start pickup path
-                    follower.followPath(pickup3Path, false);
-                    robot.UpdateTarget(-15,134);
-
-                    // Schedule intake ONCE
-                    CommandManager.INSTANCE.scheduleCommand(
-                            robot.intakeAndTransferAuto()
-                    );
-
-                    actionTimer.resetTimer();
-                    pathState = 12;
-                }
-                break; // ✅
-            case 12:
-                // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
-                    // Start shoot path
-                    follower.followPath(shoot5Path, false);
-
-
-                    actionTimer.resetTimer();
-                    pathState = 13;
-                }
-                break; // ✅
-
-            case 13:
-                // Wait for path to complete AND shooter to spin up
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.45) {
-                    // Shoot the sample
-                    CommandManager.INSTANCE.scheduleCommand(
-                                    robot.OuttakeOne()
-                    );
-
-                    actionTimer.resetTimer();
-                    pathState = 14;
-                }
-                break; // ✅
-            case 14:
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
-                    // Shoot the sample
-                    follower.followPath(leavePath);
-
+                if (!follower.isBusy()) {
+                    midPathActionFired = false; // reset for future paths
                     actionTimer.resetTimer();
                     pathState = 15;
                 }
                 break; // ✅
+
+//            case 2:
+//                // Wait for outtake to complete
+//                if (actionTimer.getElapsedTimeSeconds() > 2.75) {
+//                    // Start pickup path
+//                    follower.followPath(pickup1Path, false);
+//                    robot.UpdateTarget(-4.5,135.5);
+//
+//                    // Schedule intake ONCE
+//                    CommandManager.INSTANCE.scheduleCommand(
+//                            robot.intakeAndTransferAuto()
+//                    );
+//
+//                    actionTimer.resetTimer();
+//                    pathState = 3;
+//                }
+//                break; // ✅
+//
+//            case 3:
+//                // Wait for pickup path to complete AND intake to finish
+//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.65) {
+//                    // Start shoot path
+//                    follower.followPath(shoot2Path, false);
+//
+//                    actionTimer.resetTimer();
+//                    pathState = 4;
+//                }
+//                break; // ✅
+//
+//            case 4:
+//                // Wait for path to complete AND shooter to spin up
+//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
+//                    // Shoot the sample
+//                    CommandManager.INSTANCE.scheduleCommand(
+//                            robot.OuttakeOne()
+//
+//                    );
+//
+//                    actionTimer.resetTimer();
+//                    pathState = 5;
+//                }
+//                break; // ✅
+//
+//
+//            case 5:
+//                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
+//                    follower.followPath(gatePath, true);
+//                    CommandManager.INSTANCE.scheduleCommand(
+//                            new SequentialGroup(
+//                                    robot.intakeAndTransferAuto(),
+//                                    new Delay(5)
+//                            )
+//
+//                    );
+//
+//                    pathState = 6; // Done
+//                }
+//                break; // ✅
+//            case 6:
+//                // Wait for final path to finish
+//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 6.5) {
+//                    robot.UpdateTarget(-6, 133.5);
+//                    follower.followPath(shoot3Path);
+//                    actionTimer.resetTimer();
+//                    pathState = 7; // Done
+//                }
+//                break;
+//
+//            case 7:
+//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
+//                    // Shoot the sample
+//                    CommandManager.INSTANCE.scheduleCommand(
+//                            robot.OuttakeOne()
+//
+//                    );
+//
+//                    actionTimer.resetTimer();
+//                    pathState = 8;
+//                }
+//                break; // ✅
+//            case 8:
+//                // Wait for outtake to complete
+//                if (actionTimer.getElapsedTimeSeconds() > 2.25) {
+//                    // Start pickup path
+//                    follower.followPath(pickup2Path, false);
+//                    robot.UpdateTarget(-7,133.5);
+//
+//                    // Schedule intake ONCE
+//                    CommandManager.INSTANCE.scheduleCommand(
+//                            robot.intakeAndTransferAuto()
+//                    );
+//
+//                    actionTimer.resetTimer();
+//                    pathState = 9;
+//                }
+//                break; // ✅
+//            case 9:
+//                // Wait for outtake to complete
+//                if (actionTimer.getElapsedTimeSeconds() > 2.25) {
+//                    // Start pickup path
+//                    follower.followPath(shoot4Path, false);
+//                    // Schedule intake ONCE
+//                    actionTimer.resetTimer();
+//                    pathState = 10;
+//                }
+//                break; // ✅
+//            case 10:
+//                // Wait for pickup path to complete AND intake to finish
+//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.15) {
+//                    // Start shoot path
+//                    CommandManager.INSTANCE.scheduleCommand(
+//                            robot.OuttakeOne()
+//
+//                    );
+//                    actionTimer.resetTimer();
+//                    pathState = 11;
+//                }
+//                break; // ✅
+//            case 11:
+//                // Wait for outtake to complete
+//                if (actionTimer.getElapsedTimeSeconds() > 2.15) {
+//                    // Start pickup path
+//                    follower.followPath(pickup3Path, false);
+//                    robot.UpdateTarget(-15,134);
+//
+//                    // Schedule intake ONCE
+//                    CommandManager.INSTANCE.scheduleCommand(
+//                            robot.intakeAndTransferAuto()
+//                    );
+//
+//                    actionTimer.resetTimer();
+//                    pathState = 12;
+//                }
+//                break; // ✅
+//            case 12:
+//                // Wait for pickup path to complete AND intake to finish
+//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
+//                    // Start shoot path
+//                    follower.followPath(shoot5Path, false);
+//
+//
+//                    actionTimer.resetTimer();
+//                    pathState = 13;
+//                }
+//                break; // ✅
+//
+//            case 13:
+//                // Wait for path to complete AND shooter to spin up
+//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.45) {
+//                    // Shoot the sample
+//                    CommandManager.INSTANCE.scheduleCommand(
+//                            robot.OuttakeOne()
+//                    );
+//
+//                    actionTimer.resetTimer();
+//                    pathState = 14;
+//                }
+//                break; // ✅
+//            case 14:
+//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
+//                    // Shoot the sample
+//                    follower.followPath(leavePath);
+//
+//                    actionTimer.resetTimer();
+//                    pathState = 15;
+//                }
+//                break; // ✅
             case 15:
 
                 break; // ✅

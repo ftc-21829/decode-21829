@@ -173,6 +173,17 @@ public class Teleop extends OpMode {
                     robot.IntakeOut()
             );
         }
+        if(gamepad1.leftBumperWasPressed()){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.transferOff()
+            );
+        }
+        if(gamepad1.rightBumperWasPressed()){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.intakejamstop()
+            );
+        }
+
 
 
 

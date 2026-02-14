@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -10,10 +11,12 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.rowanmcalpin.nextftc.core.command.CommandManager;
 
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+
 @TeleOp(name = "VelocityPIDTest", group = "Testing")
 public class VelocityDistanceLogger extends OpMode {
 
-    AllMechs r;
+    AllMechCopy r;
 
     private DcMotorEx outtakeLow;
     private DcMotorEx outtakeHigh;
@@ -39,7 +42,7 @@ public class VelocityDistanceLogger extends OpMode {
 
     @Override
     public void init() {
-
+        Follower follower = Constants.createFollower(hardwareMap);
         // ---- SAFE HARDWARE MAPPING ----
         try {
             outtakeLow = hardwareMap.get(DcMotorEx.class, "outtake Low");
@@ -57,8 +60,8 @@ public class VelocityDistanceLogger extends OpMode {
         outtakeHigh.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         hood.setPosition(hoodPos);
-        r = new AllMechs(hardwareMap, gamepad1, gamepad2);
-        r.follower.setStartingPose(new Pose(72,72,Math.toRadians(90)));
+        r = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
+        r.follower.setStartingPose(new Pose(20.67,122.855,Math.toRadians(144)));
 
         // Limelight (safe)
         try {
@@ -124,7 +127,7 @@ public class VelocityDistanceLogger extends OpMode {
 
     @Override
     public void loop() {
-
+        r.follower.update();
         // ---- READ LIMELIGHT DISTANCE ----
         r.follower.update();
         LLResult result = limelight != null ? limelight.getLatestResult() : null;
@@ -177,24 +180,25 @@ public class VelocityDistanceLogger extends OpMode {
 
         if(gamepad1.crossWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
-                    r.transferfull()
-            );
-        }
-        if(gamepad1.squareWasPressed()){
-            CommandManager.INSTANCE.scheduleCommand(
-                    r.transferOff()
+                    r.intakeAndTransfer()
             );
         }
         if(gamepad1.triangleWasPressed()){
+            CommandManager.INSTANCE.scheduleCommand(
+                    r.OuttakeOne()
+            );
+        }
+        if(gamepad1.squareWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     r.intakeOn()
             );
         }
         if(gamepad1.circleWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
-                    r.intakeOff()
+                    r.transferOn()
             );
         }
+
 
         hoodPos = clamp(hoodPos, 0, 0.7);
         hood.setPosition(hoodPos);

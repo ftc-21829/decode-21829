@@ -68,7 +68,7 @@ public class Blue12Close extends OpMode {
                 .addPath(
                         new BezierLine(
                                 new Pose(53.704, 85.595, Math.toRadians(180)),
-                                new Pose(26.97, Math.toRadians(180))
+                                new Pose(26.97, 86.124, Math.toRadians(180))
                         )
                 )
                 .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))

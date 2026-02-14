@@ -37,17 +37,16 @@ public class Red12CloseGate extends OpMode {
     public void init() {
         panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(122.33, 122.855, Math.toRadians(36)));
+        follower.setStartingPose(new Pose(123.33, 122.855, Math.toRadians(36)));
         pathState = 0;
         DriveTrainFloat.setToFloatMode(hardwareMap);
-        PoseStorage.x = 122.33;
+        PoseStorage.x = 123.33;
         PoseStorage.y = 122.855;
         PoseStorage.heading = Math.toRadians(36);
+        follower.setMaxPower(1);
 
 
         robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
-        robot.UpdateTarget(144,144);
-
 
         TurretPoseStorage.autoEndTurretAngle = robot.getRotation();
 
@@ -58,106 +57,105 @@ public class Red12CloseGate extends OpMode {
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(122.33, 122.855, Math.toRadians(36)),
-                                new Pose(90.296, 85.595, Math.toRadians(0))
+                                new Pose(123.33, 122.855, Math.toRadians(36)),
+                                new Pose(90.296, 85.595, Math.toRadians(25))
                         )
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(25))
                 .build();
 
         pickup1Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(90.296, 85.595, Math.toRadians(0)),
-                                new Pose(117.63, 86.124, Math.toRadians(0))
+                                new Pose(90.296, 85.595, Math.toRadians(25)),
+                                new Pose(120.13, 83.124, Math.toRadians(0))
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(0))
-                .setVelocityConstraint(10)
+                .setLinearHeadingInterpolation(Math.toRadians(25), Math.toRadians(0))
                 .build();
         gatePath = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(117.63, 86.124, Math.toRadians(0)),
-                                new Pose(105.618426, 80.56118433931492),
-                                new Pose(127.69071, 75.62495921696577, Math.toRadians(0))
+                                new Pose(120.13, 83.124, Math.toRadians(0)),
+                                new Pose(105.6185, 80.09136378466565),
+                                new Pose(128.69071, 73.12495921696577, Math.toRadians(0))
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(0))
-                .setVelocityConstraint(5)
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
                 .build();
         shoot2Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(127.69071, 75.62495921696577, Math.toRadians(0)),
-                                new Pose(90.296, 85.595, Math.toRadians(0))
+                                new Pose(128.69071, 73.12495921696577, Math.toRadians(0)),
+                                new Pose(90.296, 85.595, Math.toRadians(36))
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                 .build();
-
         pickup2Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(90.296, 85.595, Math.toRadians(0)),
+                                new Pose(90.296, 85.595, Math.toRadians(36)),
                                 new Pose(83.4021, 56.84113),
-                                new Pose(120.641, 55.263, Math.toRadians(0))
+                                new Pose(120.441, 56.363, Math.toRadians(0))
+
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(0))
-                .setVelocityConstraint(10)
+                .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
+                .setVelocityConstraint(5)
                 .build();
-
         shoot3Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(120.641, 55.263, Math.toRadians(0)),
+                                new Pose(120.441, 56.363, Math.toRadians(0)),
                                 new Pose(100.4364, 62.6470),
                                 new Pose(90.296, 85.595, Math.toRadians(36))
+
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                 .build();
-
         pickup3Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(90.296, 85.595, Math.toRadians(0)),
+                                new Pose(90.296, 85.595, Math.toRadians(36)),
                                 new Pose(78.9731, 30.0499),
                                 new Pose(124.904, 35.672, Math.toRadians(0))
+
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(0))
                 .setVelocityConstraint(10)
                 .build();
-
         shoot4Path = follower
                 .pathBuilder()
                 .addPath(
                         new BezierLine(
-                                new Pose(123.904, 35.672, Math.toRadians(0)),
-                                new Pose(90.296, 85.595, Math.toRadians(0))
+                                new Pose(124.904, 35.672, Math.toRadians(0)),
+                                new Pose(90.296, 85.595, Math.toRadians(36))
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(36))
                 .build();
-
         leavePath = follower
                 .pathBuilder()
                 .addPath(
+
                         new BezierLine(
-                                new Pose(90.296, 85.595, Math.toRadians(0)),
-                                new Pose(96, 72, Math.toRadians(90))
+                                new Pose (90.296, 85.595, Math.toRadians(36)),
+                                new Pose (96,72, Math.toRadians(36))
                         )
+
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(90))
+                .setConstantHeadingInterpolation(Math.toRadians(36))
                 .build();
+
 
 
 
@@ -182,7 +180,7 @@ public class Red12CloseGate extends OpMode {
         robot.updateTurretTracking_NoTurretRel();
         // CRITICAL: Continuously update shooter when active
         if (shooterActive) {
-            robot.periodicShooterUpdateAndApplyPID();
+            robot.periodicShooterUpdateAndApplyPIDRedAuto();
         } else {
             robot.OuttakeOff();
         }
@@ -196,8 +194,6 @@ public class Red12CloseGate extends OpMode {
         autonomousUpdate();
         CommandManager.INSTANCE.run();
     }
-
-
     public void autonomousUpdate() {
         switch (pathState) {
             case 0:
@@ -205,7 +201,8 @@ public class Red12CloseGate extends OpMode {
                 actionTimer.resetTimer();
                 robot.setTurretTrackingActive(true);
                 shooterActive = true;
-                robot.UpdateTarget(138,146);
+                robot.UpdateTarget(134,144);
+
                 follower.followPath(shoot1Path, false);
 
                 pathState = 1;
@@ -213,23 +210,26 @@ public class Red12CloseGate extends OpMode {
 
             case 1:
                 // Wait for path to complete AND timer
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.25) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2) {
                     // Shoot the preload
                     CommandManager.INSTANCE.scheduleCommand(
                             robot.OuttakeOne()
 
                     );
                     actionTimer.resetTimer();
+
                     pathState = 2;
                 }
                 break; // ✅
 
             case 2:
                 // Wait for outtake to complete
-                if (actionTimer.getElapsedTimeSeconds() > 2.25) {
-                    // Start pickup path
-                    follower.followPath(pickup1Path, false);
-                    robot.UpdateTarget(140,150);
+                if (actionTimer.getElapsedTimeSeconds() > 2.6) {
+                    follower.followPath(pickup1Path,0.7, false);
+                    robot.UpdateTarget(144.5,140);
+//                    robot.UpdateTarget(2,148);
+
+
                     // Schedule intake ONCE
                     CommandManager.INSTANCE.scheduleCommand(
                             robot.intakeAndTransferAuto()
@@ -243,7 +243,7 @@ public class Red12CloseGate extends OpMode {
                 // Wait for outtake to complete
                 if (actionTimer.getElapsedTimeSeconds() > 2.0) {
                     // Start pickup path
-                    follower.followPath(gatePath, true);
+                    follower.followPath(gatePath,0.8, true);
 
                     // Schedule intake ONCE
 
@@ -254,7 +254,7 @@ public class Red12CloseGate extends OpMode {
                 break; // ✅
             case 4:
                 // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
                     // Start shoot path
                     follower.followPath(shoot2Path, false);
 
@@ -279,9 +279,10 @@ public class Red12CloseGate extends OpMode {
                 break; // ✅
             case 6:
                 // Wait for outtake to complete
-                if (actionTimer.getElapsedTimeSeconds() > 2.1) {
+                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
                     // Start pickup path
-                    follower.followPath(pickup2Path, false);
+                    follower.followPath(pickup2Path, 0.9, false);
+                    robot.UpdateTarget(153,137);
 
                     // Schedule intake ONCE
                     CommandManager.INSTANCE.scheduleCommand(
@@ -294,10 +295,11 @@ public class Red12CloseGate extends OpMode {
                 break; // ✅
             case 7:
                 // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
                     // Start shoot path
                     follower.followPath(shoot3Path, false);
-                    robot.UpdateTarget(148, 150);
+                    //                    robot.UpdateTarget(1,148);
+
 
                     actionTimer.resetTimer();
                     pathState = 8;
@@ -322,7 +324,9 @@ public class Red12CloseGate extends OpMode {
                 if (actionTimer.getElapsedTimeSeconds() > 2.5) {
                     // Start pickup path
                     follower.followPath(pickup3Path, false);
-                    robot.UpdateTarget(-13,133.25);
+                    robot.UpdateTarget(150,136.5);
+//                    robot.UpdateTarget(2,150);
+
 
                     // Schedule intake ONCE
                     CommandManager.INSTANCE.scheduleCommand(
@@ -335,9 +339,10 @@ public class Red12CloseGate extends OpMode {
                 break; // ✅
             case 10:
                 // Wait for pickup path to complete AND intake to finish
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 3.25) {
                     // Start shoot path
                     follower.followPath(shoot4Path, false);
+
 
                     actionTimer.resetTimer();
                     pathState = 11;
@@ -346,7 +351,7 @@ public class Red12CloseGate extends OpMode {
 
             case 11:
                 // Wait for path to complete AND shooter to spin up
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.45) {
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.65) {
                     // Shoot the sample
                     CommandManager.INSTANCE.scheduleCommand(
                             new SequentialGroup(
@@ -384,183 +389,4 @@ public class Red12CloseGate extends OpMode {
 
 
     }
-//    public void autonomousUpdate() {
-//        switch (pathState) {
-//            case 0:
-//                // Start shooting sequence
-//                actionTimer.resetTimer();
-//                robot.setTurretTrackingActive(true);
-//                shooterActive = true;
-//                robot.UpdateTarget(138,146);
-//
-//                follower.followPath(shoot1Path, false);
-//
-//                pathState = 1;
-//                break; // ✅
-//
-//            case 1:
-//                // Wait for path to complete AND timer
-//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.95) {
-//                    // Shoot the preload
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            robot.OuttakeOne()
-//                    );
-//
-//                    actionTimer.resetTimer();
-//                    pathState = 2;
-//                }
-//                break; // ✅
-//
-//            case 2:
-//                // Wait for outtake to complete
-//                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
-//                    // Start pickup path
-//                    follower.followPath(pickup1Path, false);
-//                    robot.UpdateTarget(140,150);
-//
-//                    // Schedule intake ONCE
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            robot.intakeAndTransferAuto()
-//                    );
-//
-//                    actionTimer.resetTimer();
-//                    pathState = 3;
-//                }
-//                break; // ✅
-//
-//            case 3:
-//                // Wait for pickup path to complete AND intake to finish
-//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
-//                    // Start shoot path
-//                    follower.followPath(shoot2Path, false);
-//
-//                    actionTimer.resetTimer();
-//                    pathState = 4;
-//                }
-//                break; // ✅
-//
-//            case 4:
-//                // Wait for path to complete AND shooter to spin up
-//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
-//                    // Shoot the sample
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            robot.OuttakeOne()
-//
-//                    );
-//
-//                    actionTimer.resetTimer();
-//                    pathState = 5;
-//                }
-//                break; // ✅
-//            case 5:
-//                // Wait for outtake to complete
-//                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
-//                    // Start pickup path
-//                    follower.followPath(pickup2Path, false);
-//
-//                    // Schedule intake ONCE
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            robot.intakeAndTransferAuto()
-//                    );
-//
-//                    actionTimer.resetTimer();
-//                    pathState = 6;
-//                }
-//                break; // ✅
-//            case 6:
-//                // Wait for pickup path to complete AND intake to finish
-//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.25) {
-//                    // Start shoot path
-//                    follower.followPath(shoot3Path, true);
-//                    robot.UpdateTarget(148, 150);
-//
-//                    actionTimer.resetTimer();
-//                    pathState = 7;
-//                }
-//                break; // ✅
-//
-//            case 7:
-//                // Wait for path to complete AND shooter to spin up
-//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.75) {
-//                    // Shoot the sample
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            robot.OuttakeOne()
-//
-//                    );
-//
-//                    actionTimer.resetTimer();
-//                    pathState = 8;
-//                }
-//                break; // ✅
-//            case 8:
-//                // Wait for outtake to complete
-//                if (actionTimer.getElapsedTimeSeconds() > 2.5) {
-//                    // Start pickup path
-//                    follower.followPath(pickup3Path, false);
-//
-//                    // Schedule intake ONCE
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            robot.intakeAndTransferAuto()
-//                    );
-//
-//                    actionTimer.resetTimer();
-//                    pathState = 9;
-//                }
-//                break; // ✅
-//            case 9:
-//                // Wait for pickup path to complete AND intake to finish
-//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.0) {
-//                    // Start shoot path
-//                    follower.followPath(shoot4Path, true);
-//
-//                    actionTimer.resetTimer();
-//                    pathState = 10;
-//                }
-//                break; // ✅
-//
-//            case 10:
-//                // Wait for path to complete AND shooter to spin up
-//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 3.15) {
-//                    // Shoot the sample
-//                    CommandManager.INSTANCE.scheduleCommand(
-//                            new SequentialGroup(
-//                                    robot.OuttakeOne(),
-//                                    new Delay(2)
-//
-//                            )
-//
-//                    );
-//
-//                    actionTimer.resetTimer();
-//                    pathState = 11;
-//                }
-//                break; // ✅
-//            case 11:
-//                if (actionTimer.getElapsedTimeSeconds() > 1.5) {
-//                    follower.followPath(leavePath);
-//                    pathState = 12; // Done
-//                }
-//                break; // ✅
-//            case 12:
-//                // Wait for final path to finish
-//                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2.5) {
-//
-//                    // Schedule turret zeroing
-//
-//                    pathState = 13; // Done
-//                }
-//                break;
-//
-//            case 13:
-//                // Autonomous complete, do nothing
-//                break;
-//        }
-//
-//
-//
-//    }
-
 }
-
-
-

@@ -19,7 +19,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.testing.DriveTrainFloat;
 
-@TeleOp(name = "Teleop Red")
+@TeleOp(name = "TeleopRed")
 public class TeleopRed extends OpMode {
     AllMechCopy robot;
     boolean Outtake;
@@ -40,7 +40,7 @@ public class TeleopRed extends OpMode {
     public void init() {
         Follower follower = Constants.createFollower(hardwareMap);
         robot = new AllMechCopy(hardwareMap, gamepad1, gamepad2, follower);
-        robot.limelight.pipelineSwitch(1);
+
         DriveTrainFloat.setToFloatMode(hardwareMap);
         robot.follower.setStartingPose(new Pose(PoseStorage.x, PoseStorage.y, PoseStorage.heading));
 
@@ -101,8 +101,6 @@ public class TeleopRed extends OpMode {
             telemetry.addData("Status", "NO TARGET");
         }
 
-
-
         if(gamepad1.dpadRightWasPressed()){
             CommandManager.INSTANCE.scheduleCommand(
                     robot.intakeOn()
@@ -129,10 +127,19 @@ public class TeleopRed extends OpMode {
                     robot.relocalize()
             );
         }
-
+        if(gamepad1.leftBumperWasPressed()){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.transferOff()
+            );
+        }
+        if(gamepad1.rightBumperWasPressed()){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.intakejamstop()
+            );
+        }
 
         if (Outtake){
-            robot.periodicShooterUpdateAndApplyPID();
+            robot.periodicShooterUpdateAndApplyPIDRed();
 
         }
         if (!Outtake){
@@ -163,9 +170,9 @@ public class TeleopRed extends OpMode {
         }
 
         if(robotPose.getY()<60){
-            robot.UpdateTarget(138.5 + manualXOffset,152 + manualYOffset);
+            robot.UpdateTarget(134 + manualXOffset,148 + manualYOffset);
         } else {
-            robot.UpdateTarget(144 + manualXOffset,148 + manualYOffset); // 0,148
+            robot.UpdateTarget(138 + manualXOffset,148 + manualYOffset); // 0,148
         }
 
 
