@@ -3,12 +3,9 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
-
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -17,7 +14,6 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.rowanmcalpin.nextftc.core.command.Command;
 import com.rowanmcalpin.nextftc.core.command.groups.ParallelGroup;
 import com.rowanmcalpin.nextftc.core.command.groups.SequentialGroup;
@@ -28,7 +24,7 @@ import com.rowanmcalpin.nextftc.core.command.utility.delays.WaitUntil;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Config
-public class AllMechs {
+public class AllmechsRed {
     public DcMotorEx intake, outtakeLow, outtakeHigh, transfer;
     public Follower follower;
     public ColorSensor colorSensor;
@@ -71,9 +67,9 @@ public class AllMechs {
     public static double door_open_pos = 0.75;
     public static double door_close_pos = 0.6;
     public static double butt_kicker_down = 0.88;
-    public static double butt_kicker_up = 0.49; //0.4675
+    public static double butt_kicker_up = 0.4675;
 
-
+    public static int TRACKING_PIPELINE = 1;
 
     // --- shooter tuning formulas from user ---
     // hood: y = HOOD_A * HOOD_B^x
@@ -88,40 +84,24 @@ public class AllMechs {
     private double lastValidDistanceMM = -1.0;
     private double targetOuttakePower = 0.0;
     private boolean shooterEnabled = false;
-    private double pastCurrent = 0;
-    private double current = 0;
 
     // rising edge detectors for user inputs
     private boolean prevDpadUp = false;
     private boolean prevDpadDown = false;
     private boolean prevLogButton = false;
-    VoltageSensor battery;
 
-
-    public AllMechs(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
+    public AllmechsRed(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
         this.gamepad2 = gamepad2;
         this.telemetry = new MultipleTelemetry();
 
-
         follower = Constants.createFollower(hardwareMap);
-
 
         colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
 
         outtakeLow = hardwareMap.get(DcMotorEx.class, "outtake Low");
         outtakeHigh = hardwareMap.get(DcMotorEx.class, "outtake High");
         outtakeHigh.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        outtakeHigh.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        outtakeLow.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        battery = hardwareMap.voltageSensor.iterator().next();
-
-        outtakeHigh.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeHigh.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        outtakeLow.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        outtakeLow.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
 
@@ -145,7 +125,7 @@ public class AllMechs {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100);
         limelight.start();
-        limelight.pipelineSwitch(0);
+        limelight.pipelineSwitch(TRACKING_PIPELINE);
     }
 
     public void updateLimelightData() {
@@ -212,34 +192,15 @@ public class AllMechs {
 
     // ------------------------ Commands ------------------------
 
-    public Command intakeOn() {return new InstantCommand(()-> intake.setPower(0.95));}
+    public Command intakeOn() { return new InstantCommand(() -> intake.setPower(1));  }
     public Command intakeOff() { return new InstantCommand(() -> intake.setPower(0)); }
     public Command doorOpen() { return new InstantCommand(() -> door.setPosition(door_open_pos)); }
     public Command doorClose() { return new InstantCommand(() -> door.setPosition(door_close_pos)); }
-    public Command transferOn() { return new InstantCommand(() -> transfer.setPower(0.75)); }
+    public Command transferOn() { return new InstantCommand(() -> transfer.setPower(1)); }
     public Command transferOff() { return new InstantCommand(() -> transfer.setPower(0)); }
-    public Command transferfull() {return new InstantCommand(()-> transfer.setPower(1));}
     public Command transferSlow() { return new InstantCommand(() -> transfer.setPower(0.75)); }
 
     // ---- OUTTAKE now uses PID flywheel + hood ----
-    public Command OuttakeOne(){
-                            return new SequentialGroup(
-                                    new ParallelGroup(
-                                            transferfull(),
-                                            doorOpen(),
-                                            intakeOn()
-                                    ),
-
-                                    new Delay(1),
-                                    ButtKicker(),
-                                    new ParallelGroup(
-                                            OuttakeOff(),
-                                            intakeOff(),
-                                            transferOff(),
-                                            doorClose()
-                                )
-                        );
-    }
     public Command OuttakeOn() {
         return new InstantCommand(() -> periodicShooterUpdateAndApplyPID());
     }
@@ -253,11 +214,7 @@ public class AllMechs {
                 new InstantCommand(() -> outtakeLow.setPower(0))
         );
     }
-    public Command turretOn() {
-        return new ParallelGroup(
-            new InstantCommand(() -> setTurretTrackingActive(!isTurretTrackingActive())),
-            new InstantCommand(() -> gamepad1.rumbleBlips(1)));
-    }
+    public Command turretOn() { return new InstantCommand(() -> setTurretTrackingActive(!isTurretTrackingActive())); }
     public Command turretOff() { return new InstantCommand(() -> setTurretTrackingActive(false)); }
 
     public Command ButtKicker() {
@@ -286,16 +243,14 @@ public class AllMechs {
         );
     }
 
-
-
     // ------------------------ Shooter helpers ------------------------
 
     public double computeHoodPositionFromDistance(double distanceMM) {
         if (distanceMM <= 0) return 0.0;
 
-        return -0.0000455193 * Math.pow(distanceMM, 2)
-                + 0.0198468 * distanceMM
-                -1.24468   ;
+        return -0.0000566307 * Math.pow(distanceMM, 2)
+                + 0.0233367 * distanceMM
+                -1.49896   ;
 
     }
 
@@ -303,8 +258,8 @@ public class AllMechs {
         if (distanceMM <= 0) return 0.0;
         shooterTargetVelocity =
                 0.0426503   * Math.pow(distanceMM, 2)
-                - 8.80296 * distanceMM
-                + 1675.60075; // user can replace equation
+                        - 8.85296 * distanceMM
+                        + 1675.60075; // user can replace equation
         return shooterTargetVelocity;
     }
 
@@ -321,8 +276,6 @@ public class AllMechs {
             }
         }
     }
-
-
 
     /** Apply PID-controlled flywheel velocity and hood position */
     public void periodicShooterUpdateAndApplyPID() {

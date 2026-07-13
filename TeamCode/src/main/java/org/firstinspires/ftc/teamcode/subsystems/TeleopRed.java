@@ -19,8 +19,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.testing.DriveTrainFloat;
 
-@TeleOp(name = "TeleopBlue")
-public class Teleop extends OpMode {
+@TeleOp(name = "TeleopRed")
+public class TeleopRed extends OpMode {
     AllMechCopy robot;
     boolean Outtake;
     Gamepad currentGamepad1, previousGamepad1, currentGamepad2, previousGamepad2;
@@ -127,10 +127,19 @@ public class Teleop extends OpMode {
                     robot.relocalize()
             );
         }
-
+        if(gamepad1.leftBumperWasPressed()){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.transferOff()
+            );
+        }
+        if(gamepad1.rightBumperWasPressed()){
+            CommandManager.INSTANCE.scheduleCommand(
+                    robot.intakejamstop()
+            );
+        }
 
         if (Outtake){
-            robot.periodicShooterUpdateAndApplyPID();
+            robot.periodicShooterUpdateAndApplyPIDRed();
 
         }
         if (!Outtake){
@@ -161,9 +170,9 @@ public class Teleop extends OpMode {
         }
 
         if(robotPose.getY()<60){
-            robot.UpdateTarget(-3 + manualXOffset,144 + manualYOffset);
+            robot.UpdateTarget(134 + manualXOffset,148 + manualYOffset);
         } else {
-            robot.UpdateTarget(-3 + manualXOffset,144 + manualYOffset); // 0,148
+            robot.UpdateTarget(138 + manualXOffset,148 + manualYOffset); // 0,148
         }
 
 
@@ -173,17 +182,6 @@ public class Teleop extends OpMode {
                     robot.IntakeOut()
             );
         }
-        if(gamepad1.leftBumperWasPressed()){
-            CommandManager.INSTANCE.scheduleCommand(
-                    robot.transferOff()
-            );
-        }
-        if(gamepad1.rightBumperWasPressed()){
-            CommandManager.INSTANCE.scheduleCommand(
-                    robot.intakejamstop()
-            );
-        }
-
 
 
 

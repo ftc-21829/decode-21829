@@ -1,17 +1,18 @@
 package org.firstinspires.ftc.teamcode.testing;
 
-import com.bylazar.configurables.annotations.Configurable;
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@Configurable
+@Config
 @TeleOp(name = "ServoTesting", group = "testing")
 public class ServoPos extends OpMode {
-    public DcMotor fwLeft, fwRight, intakeFront, intakeBack;
-    public Servo hood, transfer;
-
+    public DcMotor outtakeLow, outtakeHigh, intake, transfer;
+    public Servo hood, door, buttkicker,servoStop;
+    public static double door_open_pos = 0.3;
+    public static double door_close_pos = 0.2;
     public static double servo_far_pos = 0.35;
     public static double servo_middle_pos = 0.3;
     public static double servo_close_pos = 0.15;
@@ -19,19 +20,24 @@ public class ServoPos extends OpMode {
     public static double motor_power = 1;
     public static double transfer_pos_up = 1;
     public static double transfer_pos_down = 0;
+    public static double servo_stop_down = 0.215;
+    public static double servo_stop_up = 0.1;
+    public static double butt_kicker_down = 0.84;
+    public static double butt_kicker_up = 0.4675;
 
 
 
     @Override
     public void init() {
-        fwLeft = hardwareMap.get(DcMotor.class, "flyWheelLeft");
-        fwRight = hardwareMap.get(DcMotor.class, "flyWheelRight");
-        intakeBack = hardwareMap.get(DcMotor.class, "intakeBack");
-        intakeFront = hardwareMap.get(DcMotor.class, "intakeFront");
-
+        outtakeHigh = hardwareMap.get(DcMotor.class, "outtake High");
+        outtakeLow = hardwareMap.get(DcMotor.class, "outtake Low");
+        intake = hardwareMap.get(DcMotor.class, "intake");
+        transfer = hardwareMap.get(DcMotor.class, "transfer");
+        buttkicker = hardwareMap.get(Servo.class, "buttkicker");
+        door = hardwareMap.get(Servo.class, "door");
         hood = hardwareMap.get(Servo.class, "hood");
-        transfer = hardwareMap.get(Servo.class, "transfer");
-        hood.setPosition(servo_reset_pos);
+        servoStop = hardwareMap.get(Servo.class, "servoStop");
+
 
 
     }
@@ -39,33 +45,55 @@ public class ServoPos extends OpMode {
     @Override
     public void loop() {
 
-        if(gamepad1.dpad_left){
-            fwRight.setPower(motor_power);
-            fwLeft.setPower(motor_power);
+//        if(gamepad1.dpad_left){
+//            outtakeLow.setPower(motor_power);
+//            outtakeHigh.setPower(motor_power);
+//        }
+//        if(gamepad1.dpad_up){
+//            hood.setPosition(servo_close_pos);
+//        }
+//        if(gamepad1.dpad_right){
+//            hood.setPosition(servo_middle_pos);
+//        }
+//        if(gamepad1.dpad_down){
+//            hood.setPosition(servo_far_pos);
+//        }
+//        if(gamepad1.square){
+//            hood.setPosition(servo_reset_pos);
+//        }
+//        if(gamepad2.left_bumper){
+//            transfer.setPower(1);
+//        }
+//        if(gamepad2.right_bumper){
+//            transfer.setPower(0);
+//        }
+//
+//        if(gamepad1.circle){
+//            intake.setPower(1);
+//        }
+//        if(gamepad1.triangle){
+//            door.setPosition(door_open_pos);
+//        }
+//        if(gamepad1.cross){
+//            door.setPosition(door_close_pos);
+//        }
+        if(gamepad1.dpad_left) {
+            door.setPosition(door_close_pos);
         }
-        if(gamepad1.dpad_up){
-            hood.setPosition(servo_close_pos);
+        if(gamepad1.dpad_right) {
+            door.setPosition(door_open_pos);
         }
-        if(gamepad1.dpad_right){
-            hood.setPosition(servo_middle_pos);
+        if(gamepad1.right_bumper) {
+            buttkicker.setPosition(butt_kicker_down);
         }
-        if(gamepad1.dpad_down){
-            hood.setPosition(servo_far_pos);
+        if(gamepad1.left_bumper) {
+            buttkicker.setPosition(butt_kicker_up);
         }
-        if(gamepad1.square){
-            hood.setPosition(servo_reset_pos);
+        if(gamepad1.dpad_down) {
+            servoStop.setPosition(servo_stop_down);
         }
-        if(gamepad1.left_bumper){
-            transfer.setPosition(transfer_pos_up);
+        if(gamepad1.dpad_up) {
+            servoStop.setPosition(servo_stop_up);
         }
-        if(gamepad1.right_bumper){
-            transfer.setPosition(transfer_pos_down);
-        }
-        if(gamepad1.circle){
-            intakeFront.setPower(1);
-            intakeBack.setPower(1);
-        }
-
-
     }
 }
